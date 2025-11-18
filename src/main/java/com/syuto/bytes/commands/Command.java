@@ -21,7 +21,7 @@ public abstract class Command {
         ChatUtils.print("§bCommand usage: §7" + syntax);
     }
 
-    public void onCommand(String[] args, String message) {}
+    public void onCommand(String[] args, String message) throws Exception {}
 
     public String getName() {
         return name;

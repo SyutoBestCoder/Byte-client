@@ -78,7 +78,6 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
     )
     public void start(CallbackInfo ci) {
         RotationUtils.setCamYaw(mc.player.getYaw());
-        RotationUtils.setCamPitch(mc.player.getPitch());
 
         RotationUtils.setLastRotationYaw(RotationUtils.getRotationYaw());
         RotationUtils.setLastRotationPitch(RotationUtils.getRotationPitch());
@@ -106,7 +105,7 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
     }
 
     @Inject(
-            at = @At(value = "TAIL"),
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/ClientPlayerEntity;sendSneakingPacket()V"),
             method = "tick"
     )
 

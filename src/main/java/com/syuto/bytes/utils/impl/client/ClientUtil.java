@@ -6,6 +6,8 @@ import static com.syuto.bytes.Byte.mc;
 
 public class ClientUtil {
 
+
+
     public static void crash() {
         long freeAddr = ReflectionUtil.theUnsafe.allocateMemory(1);
         ReflectionUtil.theUnsafe.freeMemory(freeAddr);

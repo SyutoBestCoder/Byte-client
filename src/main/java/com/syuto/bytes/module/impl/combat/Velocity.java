@@ -38,14 +38,8 @@ public class Velocity extends Module {
                 double y = vertical == 0 ? mc.player.getVelocity().y : (s12.getVelocityY()) * vertical;
                 double z = horizontal == 0 ? mc.player.getVelocity().z : (s12.getVelocityZ()) * horizontal;
 
-
-                if (mc.player.isOnGround()) {
-                    mc.player.jump();
-                    mc.options.jumpKey.setPressed(false);
-                }
-
-                //event.setCanceled(true);
-                //mc.player.setVelocity(x, y,z);
+                event.setCanceled(true);
+                mc.player.setVelocity(x, y,z);
             }
         }
     }

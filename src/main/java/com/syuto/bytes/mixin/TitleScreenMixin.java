@@ -17,7 +17,7 @@ import static com.syuto.bytes.Byte.mc;
 @Mixin(TitleScreen.class)
 public class TitleScreenMixin {
     @Unique
-    Identifier imageIdentifier = Identifier.of("byte", "background/ast1.png");
+    Identifier imageIdentifier = Identifier.of("byte", "background/back.png");
 
     @Inject(
             method = "render",
@@ -30,7 +30,7 @@ public class TitleScreenMixin {
         int windowWidth = mc.getWindow().getScaledWidth();
         int windowHeight = mc.getWindow().getScaledHeight();
 
-        //drawImage(context, 0, 0, windowWidth, windowHeight);
+        drawImage(context, 0, 0, windowWidth, windowHeight);
         //Byte.LOGGE R.info("w {}, h {}", windowWidth, windowHeight);
     }
 
@@ -55,6 +55,6 @@ public class TitleScreenMixin {
             )
     )
     public void renderr(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
-        //Snow.renderSnowflakes(context);
+        Snow.renderSnowflakes(context);
     }
 }

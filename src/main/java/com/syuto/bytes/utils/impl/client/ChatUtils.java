@@ -8,7 +8,7 @@ public class ChatUtils {
 
     public static void print(Object message) {
         if (mc.player != null && mc.world != null) {
-            String m = "§7[" + "§3Byteitone§7" + "] §f"  + message;
+            String m = "§7[" + "§3Byte§7" + "] §f"  + message;
             mc.player.sendMessage(Text.of(m),false);
             //mc.inGameHud.getChatHud().addMessage(Text.of(m));
         }

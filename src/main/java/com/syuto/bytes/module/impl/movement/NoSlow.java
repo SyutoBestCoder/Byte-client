@@ -15,7 +15,7 @@ import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.Vec3d;
 
 public class NoSlow extends Module {
-    public ModeSetting modes = new ModeSetting("mode",this,"Vanilla", "Epsilon", "Ground");
+    public ModeSetting modes = new ModeSetting("mode",this,"Vanilla", "Epsilon", "Grim");
 
     private int ground = 0;
     private boolean state = false;
@@ -54,7 +54,6 @@ public class NoSlow extends Module {
                     }
                 }
                 case "Ground" -> {
-                    mc.interactionManager.clickSlot(mc.player.currentScreenHandler.syncId, 36, 1, SlotActionType.SWAP, mc.player);
 
                 }
             }

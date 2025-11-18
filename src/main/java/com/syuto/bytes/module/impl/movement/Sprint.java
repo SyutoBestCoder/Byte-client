@@ -19,7 +19,7 @@ public class Sprint extends Module {
     @EventHandler
     void onPreUpdate(PreUpdateEvent event) {
         if (MovementUtil.isMoving()) {
-            mc.player.setSprinting(true);
+            // mc.player.setSprinting(true);
             KeyBinding.setKeyPressed(mc.options.sprintKey.getDefaultKey(), true);
         }
     }

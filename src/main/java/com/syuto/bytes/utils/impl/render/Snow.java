@@ -19,7 +19,8 @@ public class Snow {
     private static final Color snowflakeColor = Color.WHITE;
     private static final List<Snowflake> snowflakes = new ArrayList<>();
     private static final Random random = new Random();
-    private static Identifier imageIdentifier = Identifier.of("byte", "background/glove.png");
+    private static Identifier imageIdentifier = Identifier.of("byte", "background/snow.png");
+
 
 
     private static class Snowflake {
@@ -45,6 +46,8 @@ public class Snow {
         MatrixStack matrices = event.getMatrices();
         Matrix4f matrix = matrices.peek().getPositionMatrix();
 
+        matrices.push();
+
         int width = mc.getWindow().getScaledWidth();
         int height = mc.getWindow().getScaledHeight();
 
@@ -61,6 +64,7 @@ public class Snow {
         for (Snowflake snowflake : snowflakes) {
             snowflake.fall();
 
+
             event.drawTexture(
                     RenderLayer::getGuiTextured,
                     imageIdentifier,
@@ -70,6 +74,7 @@ public class Snow {
                     (int) snowflake.size, (int) snowflake.size
             );
         }
+        matrices.pop();
     }
 
 }

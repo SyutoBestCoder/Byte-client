@@ -2,6 +2,7 @@ package com.syuto.bytes.module.impl.render;
 
 import com.syuto.bytes.eventbus.EventHandler;
 import com.syuto.bytes.eventbus.impl.RenderTickEvent;
+import com.syuto.bytes.eventbus.impl.RenderWorldEvent;
 import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.utils.impl.render.RenderUtils;
@@ -23,7 +24,7 @@ public class RenderingTest extends Module {
 
 
     @EventHandler
-    public void onRenderTick(RenderTickEvent event) {
+    public void onRenderTick(RenderWorldEvent event) {
         if (RotationUtils.yawChanged) {
             mc.player.renderYaw = RotationUtils.getCamYaw();
         }

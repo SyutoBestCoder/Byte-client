@@ -13,6 +13,7 @@ import com.syuto.bytes.utils.impl.client.ChatUtils;
 import com.syuto.bytes.utils.impl.player.MovementUtil;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.MovementType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -61,7 +62,7 @@ public class Speed extends Module {
     }
 
 
-    private int ground = 0;
+    private int ground = 0, ticks = 0;
 
 
     @Override
@@ -89,7 +90,11 @@ public class Speed extends Module {
         switch (modes.getValue()) {
             case "Watchdog" -> {
                 jump();
-                setSpeed(2f);
+                setSpeed(0.5f);
+
+                if (Killaura.target != null && mc.options.jumpKey.isPressed()) {
+                    setStafe(Killaura.target);
+                }
             }
             case "Verus" -> {
 
@@ -97,38 +102,48 @@ public class Speed extends Module {
 
                 switch(this.ground) {
                     case 1 -> {
+                        setMotY(0.2);
                     }
 
                     case 2 -> {
                         if (!mc.player.horizontalCollision) {;
-                            //mc.player.setVelocity(motion.x * 1.45, motion.y, motion.z * 1.45);
+                            mc.player.setVelocity(motion.x * 1.45, motion.y, motion.z * 1.45);
                         }
                     }
                 }
+                setSpeed(0.6);
                 if (Killaura.target != null && mc.options.jumpKey.isPressed()) {
                     //setStafe(Killaura.target);
                 }
             }
 
             case "Custom" -> {
-                double speed = 0.06 + (mc.player.isOnGround() ? 0.12 : 0.21) + mc.player.getVelocity().y / 20;
-                jump();
-
-                if (this.ground == 4) {
-
-                    setMotY(-0.09800000190734863);
+                if (!mc.player.isOnGround()) {
+                    ticks++;
+                    if (ticks == 1) {
+                        mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+                        ChatUtils.print("1");
+                    } else if (ticks == 2) {
+                        Vec3d pos = mc.player.getPos();
+                        double forward = 0.03;
+                        float yaw = MovementUtil.direction();
+                        double dx = -Math.sin(yaw) * forward;
+                        double dz = Math.cos(yaw) * forward;
+                        mc.player.setPosition(pos.x + dx, pos.y , pos.z + dz) ;
+                        ChatUtils.print("2");
+                    } else if (ticks >= 11) {
+                        mc.player.setJumping(true);
+                        mc.player.jump();
+                        mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+                        ChatUtils.print("jump");
+                        ticks = 0;
+                    }
                 }
-
-                if (!mc.player.isOnGround() && MovementUtil.isMoving()) {
-                    MovementUtil.setSpeed(speed);
-                }
-
             }
 
             case "Grim" -> {
-
                 if (mc.player.input.movementForward == 0 && mc.player.input.movementSideways == 0) return;
-
+                ticks++;
 
                 if (mc.player.isOnGround() && MovementUtil.isMoving()) {
                     mc.options.jumpKey.setPressed(true);
@@ -136,9 +151,14 @@ public class Speed extends Module {
                 } else {
                     mc.options.jumpKey.setPressed(false);
                 }
-                if (mc.player.isOnGround()) {
+
+
+
+                if (!mc.player.isOnGround() && this.ground < 1) {
                     mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
                 }
+
+               //. ChatUtils.print("ticks: " + this.ground);
 
             }
 
@@ -153,8 +173,7 @@ public class Speed extends Module {
                 if (mc.player.isOnGround()) {
                     mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
                 }
-
-                if (!mc.player.isOnGround() && this.ground >= 0) {
+                if (!mc.player.isOnGround() && ground > 1) {
                     mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
                 }
                 mc.player.setSneaking(false);

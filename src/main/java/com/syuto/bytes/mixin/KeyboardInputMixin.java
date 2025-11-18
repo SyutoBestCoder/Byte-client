@@ -35,10 +35,6 @@ public class KeyboardInputMixin extends Input {
             this.movementSideways = Math.round(mS * cos + mF * sin);
             this.movementForward = Math.round(mF * cos - mS * sin);
 
-            boolean forward = this.movementForward > 0;
-            boolean backward = this.movementForward < 0;
-            boolean left = this.movementSideways > 0;
-            boolean right  = this.movementSideways < 0;
 
             //boolean forward, boolean backward, boolean left, boolean right, boolean jump, boolean sneak, boolean sprint
 

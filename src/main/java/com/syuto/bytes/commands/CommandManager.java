@@ -27,7 +27,7 @@ public class CommandManager {
 
 
     @EventHandler
-    public void onChat(ChatEvent event) {
+    public void onChat(ChatEvent event) throws Exception {
         String message = event.getMessage();
         if (!message.startsWith(prefix)) return;
         event.setCanceled(true);

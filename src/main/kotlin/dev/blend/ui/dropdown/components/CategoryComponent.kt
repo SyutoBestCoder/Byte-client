@@ -35,6 +35,7 @@ class CategoryComponent(
     }
 
     override fun init() {
+
         openAnimation.set(0.5)
         openAnimation.reset()
         components.forEach {

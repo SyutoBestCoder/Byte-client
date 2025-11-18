@@ -1,5 +1,7 @@
 package com.syuto.bytes.utils.impl.player;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.minecraft.block.BedBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;

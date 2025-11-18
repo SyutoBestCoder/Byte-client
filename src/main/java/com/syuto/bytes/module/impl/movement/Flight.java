@@ -11,10 +11,14 @@ import com.syuto.bytes.utils.impl.client.ChatUtils;
 import com.syuto.bytes.utils.impl.player.MovementUtil;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
+import io.netty.util.internal.MathUtil;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+
+import java.util.Random;
 
 public class Flight extends Module {
 
@@ -51,6 +55,7 @@ public class Flight extends Module {
         this.jumps = 0;
         this.damage = false;
         this.ticks = 0;
+
     }
 
     @EventHandler
@@ -81,7 +86,12 @@ public class Flight extends Module {
             }
 
             case "Spoof" -> {
-                //mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(mc.player, ClientCommandC2SPacket.Mode.START_FALL_FLYING));
+                if (!damage) {
+                    Vec3d pos = mc.player.getPos();
+
+                    mc.player.setPosition(pos.x, pos.y + 5, pos.z);
+                    damage = true;
+                }
 
             }
 

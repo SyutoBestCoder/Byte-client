@@ -98,6 +98,18 @@ public class Hud extends Module {
             }
         }
 
+        int fps = mc.getCurrentFps();
+        RenderUtils.drawText(
+                event.context,
+                String.valueOf(fps),
+                10,
+                10,
+                currentColor.getRGB()
+
+
+        );
+
+
        // matrices.pop();
     }
 }

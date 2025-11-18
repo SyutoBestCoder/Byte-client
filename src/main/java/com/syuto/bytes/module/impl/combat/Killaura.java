@@ -10,6 +10,7 @@ import com.syuto.bytes.module.impl.player.scaffold.Scaffold;
 import com.syuto.bytes.setting.impl.ModeSetting;
 import com.syuto.bytes.setting.impl.NumberSetting;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
+import com.syuto.bytes.utils.impl.player.MovementUtil;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import com.syuto.bytes.utils.impl.render.AnimationUtils;
 import com.syuto.bytes.utils.impl.render.RenderUtils;
@@ -20,6 +21,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.c2s.play.*;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 
@@ -85,8 +87,10 @@ public class Killaura extends Module {
             EntityHitResult result = (EntityHitResult) PlayerUtil.raycast(RotationUtils.getRotationYaw(), RotationUtils.getRotationPitch(), swing.getValue().doubleValue(), delta, false);
             ticks++;
 
+
             handleAutoBlock();
             executeAttack(null);
+
             /*if (result != null && result.getEntity().equals(this.target)) {
                 handleAutoBlock();
                 executeAttack(result);
@@ -103,8 +107,7 @@ public class Killaura extends Module {
 
     @EventHandler
     public void onRotation(RotationEvent event) {
-        if (lastRotation == null)
-            lastRotation = new float[]{RotationUtils.getLastRotationYaw(), RotationUtils.getLastRotationPitch()};
+        lastRotation = new float[]{RotationUtils.getLastRotationYaw(), RotationUtils.getLastRotationPitch()};
 
         if (target != null) {
             rotations = RotationUtils.getRotations(
@@ -112,6 +115,16 @@ public class Killaura extends Module {
                     mc.player.getEyePos(),
                     target
             );
+
+            float currentYaw = RotationUtils.getRotationYaw();
+            float targetYaw = rotations[0];
+
+            float yaws = targetYaw - currentYaw;
+            yaws %= 360.0f;
+            if (yaws > 180.0f) yaws-= 360.0f;
+            if (yaws < -180.0f) yaws += 360.0f;
+
+            rotations[0] = currentYaw + yaws;
 
             rotations = RotationUtils.getFixedRotation(rotations, lastRotation);
 
@@ -257,6 +270,13 @@ public class Killaura extends Module {
     public void onRenderWorld(RenderWorldEvent e) {
         if (target != null && canAttack(target)) {
             RenderUtils.renderBox(target, e, e.partialTicks);
+
+            RenderUtils.drawLine(
+                    e.matrixStack,
+                    mc.player.getEyePos(),
+                    PlayerUtil.getClosestPoint(target),
+                    Color.MAGENTA.getRGB()
+            );
         }
     }
 

@@ -11,6 +11,7 @@
     "ClientPlayerEntityMixin",
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerNetworkHandlerMixin",
+    "DownloaderMixin",
     "EntityMixin",
     "ItemRendererMixin",
     "KeyboardInputMixin",
@@ -27,6 +28,6 @@
     "SendPacketMixinAccessor",
     "SoundManagerMixin",
     "TextRendererMixin",
-    "DownloaderMixin"
+    "TitleScreenMixin"
   ]
 }

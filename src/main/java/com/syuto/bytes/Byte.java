@@ -26,13 +26,13 @@ public class Byte implements ModInitializer {
 	public static MinecraftClient mc = MinecraftClient.getInstance();
 	public CommandManager commandManager;
 	public Handlers handlers;
+    public final static String CHATGPT_API = "";
 
 	public static final Identifier FEM_SOUND_ID = Identifier.of("byte", "music.fem");
 	public static final SoundEvent FEM_SOUND_EVENT = SoundEvent.of(FEM_SOUND_ID);
 
 
 	public Byte() {
-
 		eventBus = new EventBus();
 		commandManager = new CommandManager();
 		handlers = new Handlers();

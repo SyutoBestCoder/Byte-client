@@ -3,6 +3,7 @@ package com.syuto.bytes.utils.impl.rotation;
 import com.syuto.bytes.Byte;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
 import com.syuto.bytes.utils.impl.player.MovementUtil;
+import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.client.Mouse;
@@ -49,11 +50,12 @@ public class RotationUtils {
 
 
     public static float[] getRotations(float[] last, Vec3d eye, Entity entity) {
-        Vec3d to = entity.getEyePos();
+        Vec3d to = PlayerUtil.getClosestPoint(entity);
         Vec3d diff = to.subtract(eye);
+
         double dist = Math.sqrt(diff.x * diff.x + diff.z * diff.z);
 
-        float pitch = (float) Math.toDegrees(-Math.atan2(diff.y - 0.5, dist));
+        float pitch = (float) Math.toDegrees(-Math.atan2(diff.y , dist));
         float yaw = (float) Math.toDegrees(Math.atan2(diff.z, diff.x)) - 90;
 
         yaw = unwrap(last[0], yaw);
@@ -108,6 +110,9 @@ public class RotationUtils {
                 )
         );
 
+
+        yaw = unwrap(RotationUtils.getLastRotationYaw(),yaw);
+
         return new float[]{yaw, clampPitch(pitch)};
     }
 
@@ -138,12 +143,12 @@ public class RotationUtils {
 
     public static void turnHead(float yaw) {
         float f = MathHelper.wrapDegrees(yaw - mc.player.bodyYaw);
-        mc.player.bodyYaw += f * 0.3F;
+        //mc.player.bodyYaw += f * 0.3F;
         float h = 85.0f;
         if (Math.abs(f) > h) {
-            mc.player.bodyYaw += f - (float) MathHelper.sign(f) * h;
+            //mc.player.bodyYaw += f - (float) MathHelper.sign(f) * h;
         }
-
+        mc.player.bodyYaw = yaw;
         mc.player.headYaw = yaw;
     }
 }

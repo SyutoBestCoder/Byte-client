@@ -1,6 +1,7 @@
 package com.syuto.bytes.utils.impl.player;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.Mouse;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
@@ -32,7 +33,7 @@ public class PlayerUtil {
         return mc.player.getEyePos().distanceTo(getClosestPoint(target));
     }
 
-    private static Vec3d getClosestPoint(Entity target) {
+    public static Vec3d getClosestPoint(Entity target) {
         Box hb = target.getBoundingBox();
         Vec3d eyePos = mc.player.getEyePos();
 
@@ -72,7 +73,7 @@ public class PlayerUtil {
         BlockHitResult blockHit = mc.world.raycast(new RaycastContext(
                 startPos,
                 endPos,
-                RaycastContext.ShapeType.COLLIDER,
+                RaycastContext.ShapeType.OUTLINE,
                 includeFluids ? RaycastContext.FluidHandling.ANY : RaycastContext.FluidHandling.NONE,
                 mc.player
         ));
@@ -168,5 +169,25 @@ public class PlayerUtil {
 
             return blockBreakingSpeed / hardness / (float) i;
         }
+    }
+
+    public static int getFallDistance() {
+        var player = mc.player;
+        var world = mc.world;
+
+        int startY = player.getBlockY();
+        if (player.getY() % 1.0 == 0) startY--;
+
+        int fallDistance = 0;
+
+        for (int y = startY; y >= 0; y--) {
+            BlockState block = world.getBlockState(new BlockPos(player.getBlockX(), y, player.getBlockZ()));
+            if (!block.isAir() && !block.getBlock().toString().toLowerCase().contains("sign")) {
+                fallDistance = startY - y;
+                break;
+            }
+        }
+
+        return fallDistance;
     }
 }

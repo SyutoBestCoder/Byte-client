@@ -428,7 +428,7 @@ public class RenderUtils {
         BufferBuilder bufferBuilder = getBufferBuilder(matrixStack, VertexFormat.DrawMode.DEBUG_LINE_STRIP);
 
         Matrix4f matrix = matrixStack.peek().getPositionMatrix();
-
+        RenderSystem.lineWidth(10);
         bufferBuilder.vertex(matrix, (float) start.x, (float) start.y, (float) start.z).color(color);
         bufferBuilder.vertex(matrix, (float) end.x, (float) end.y, (float) end.z).color(color);
 

@@ -10,6 +10,7 @@ import com.syuto.bytes.utils.impl.client.ChatUtils;
 import net.minecraft.item.Item;
 import net.minecraft.item.MaceItem;
 import net.minecraft.item.SwordItem;
+import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 
@@ -64,11 +65,11 @@ public class Criticals extends Module {
                         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, mc.player.horizontalCollision));
                         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1.501 + 15, z, false, mc.player.horizontalCollision));
                         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, mc.player.horizontalCollision));
-                        ChatUtils.print("Critical Hit!");
+                        //ChatUtils.print("Critical Hit!");
                     } else {
                         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 0.0625, z, false, mc.player.horizontalCollision));
                         mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, false, mc.player.horizontalCollision));
-                        ChatUtils.print("Critical Hit!");
+                       // ChatUtils.print("Critical Hit!");
                     }
 
                 }
