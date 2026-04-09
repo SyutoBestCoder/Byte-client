@@ -5,6 +5,7 @@ import com.syuto.bytes.eventbus.EventHandler;
 import com.syuto.bytes.eventbus.impl.PacketReceivedEvent;
 import com.syuto.bytes.eventbus.impl.PostMotionEvent;
 import com.syuto.bytes.eventbus.impl.PreMotionEvent;
+import com.syuto.bytes.eventbus.impl.PreUpdateEvent;
 import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.setting.impl.ModeSetting;
@@ -17,110 +18,46 @@ import io.netty.util.internal.MathUtil;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import net.fabricmc.loader.impl.lib.sat4j.core.Vec;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 import net.minecraft.world.phys.Vec3;
 
-@Deprecated
+
 public class Flight extends Module {
 
-    public ModeSetting modes = new ModeSetting("Mode",this,"Vanilla", "Spoof", "Damage");
-    public NumberSetting speed = new NumberSetting("Speed", this, 1.0d, 0, 8.0d, 0.1d);
+    public ModeSetting mode = new ModeSetting(
+            "Mode", this,
+            "Vanilla", "Verus"
+    );
+    public NumberSetting speed = new NumberSetting(
+            "Speed", this,
+            1.0d, 0, 8.0d, 0.1d);
 
     public Flight() {
         super("Flight", "Zoom", Category.MOVEMENT);
         setSuffix(() ->
-                modes.getValue()
+                mode.getValue()
         );
     }
-    //vars
-    private int jumps = 0, ticks = 0;
-    private boolean damage = false;
 
-    private final double[] jumpValues = {
-            0.41999998688698,
-            0.7531999805212,
-            1.00133597911215,
-            1.166109260938214,
-            1.24918707874468,
-            1.25220334025373,
-            1.17675927506424,
-            1.024424088213685,
-            0.7967356006687,
-            0.495200877005914,
-            0.121296840539195
-    };
-
-    //events
-    @Override
-    public void onEnable() {
-        this.jumps = 0;
-        this.damage = false;
-        this.ticks = 0;
-
-    }
+    // GOD BYPASS CLIENT VALUE
+    // BYPASS GOD CLIENT
 
     @EventHandler
-    void onPreMotion(PreMotionEvent event) {
-        ticks++;
-
-        double predictedY = MovementUtil.predictedMotion(event.posY, ticks);
-        double y;
-
-        if (mc.options.keyJump.isDown()) {
-            y = speed.getValue().doubleValue();
-        } else if (mc.options.keyShift.isDown()) {
-            y = -speed.getValue().doubleValue();
-        } else {
-            y = 0;
-        }
-
-        Vec3 motion = mc.player.getDeltaMovement();
-
-        switch(modes.getValue()) {
-            case "Vanilla" -> {
-                mc.player.setDeltaMovement(motion.x, y, motion.z);
-
-                if (MovementUtil.isMoving()) {
-                    MovementUtil.setSpeed(speed.getValue().doubleValue());
-                } else {
-                    mc.player.setDeltaMovement(0, y, 0);
+    public void onPreUpdate(PreUpdateEvent event) {
+        switch (mode.getValue()) {
+            case "Verus" -> {
+                if(!MovementUtil.isMoving()) {
+                    return;
                 }
-            }
 
-
-            case "Spoof" -> {
-                final InputConstants.Key attackKey = InputConstants.getKey("key.mouse.left");
-                final InputConstants.Key useKey = InputConstants.getKey("key.mouse.right");
-                if (mc.options.keyUse.isDown()) {
-                    if (ticks % 2 == 0) {
-                        KeyMapping.click(attackKey);
-                    } else {
-                        KeyMapping.click(useKey);
-                    }
+                MovementUtil.setMotionY(-0.078400001525878);
+                if(!mc.player.onGround()) {
+                    MovementUtil.setSpeed(0.37d);
                 }
             }
         }
     }
-
-
-    @EventHandler
-    public void onPostMotion(PostMotionEvent event) {
-        switch (modes.getValue()) {
-            case "Spoof" -> {
-            }
-        }
-
-    }
-
-    @EventHandler
-    public void onPacketReceived(PacketReceivedEvent event) {
-        if (event.getPacket() instanceof ClientboundSetEntityMotionPacket s12) {
-            if (s12.getId() == mc.player.getId() && modes.getValue().equals("Damage")) {
-                this.damage = true;
-            }
-        }
-    }
-
 }

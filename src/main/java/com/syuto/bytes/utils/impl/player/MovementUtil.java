@@ -20,6 +20,11 @@ public class MovementUtil {
         mc.player.setDeltaMovement(-Math.sin(dir) * speed, mc.player.getDeltaMovement().y, Math.cos(dir) * speed);
     }
 
+    public static void setMotionY(double d) {
+        Vec3 motion = mc.player.getDeltaMovement();
+        mc.player.setDeltaMovement(new Vec3(motion.x, d, motion.z));
+    }
+
     public static float direction() {
         float rotationYaw = mc.player.getYRot();
         if (mc.player.zza < 0) {

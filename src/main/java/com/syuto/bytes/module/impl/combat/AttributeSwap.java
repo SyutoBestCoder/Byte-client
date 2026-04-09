@@ -40,7 +40,7 @@ public class AttributeSwap extends Module {
     private boolean toggleRequested = false;
 
     public AttributeSwap() {
-        super("AttributeSwap", "Swaps to mace based on weapon and chosen mace variant", Category.COMBAT);
+        super("AttributeSwap", "Swaps to mace based on weapon and chosen mace variant, meow", Category.COMBAT);
         setSuffix(() -> preferred.name());
     }
 

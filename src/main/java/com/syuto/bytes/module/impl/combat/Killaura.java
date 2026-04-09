@@ -27,14 +27,12 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 
-
-@Deprecated
 public class Killaura extends Module {
 
     private final ModeSetting targeting = new ModeSetting("Target Mode", this, "Single", "Switch");
     private final NumberSetting delay = new NumberSetting("Switch delay", this, 200, 0, 1000, 50);
     private final NumberSetting aps = new NumberSetting("APS", this, 10, 1, 20, 1);
-    private final NumberSetting reach = new NumberSetting("Reach", this, 6, 1, 8, 0.5);
+    private final NumberSetting reach = new NumberSetting("Reach", this, 3, 1, 8, 0.5);
     private final NumberSetting swing = new NumberSetting("Swing range", this, 6, 1, 8, 0.5);
     private final ModeSetting autoBlock = new ModeSetting("Autoblock", this, "None", "Fake", "Vanilla");
 
@@ -46,7 +44,7 @@ public class Killaura extends Module {
     private int targetIndex = 0, ticks;
 
     public Killaura() {
-        super("Killaura", "Attacks people for you.", Category.COMBAT);
+        super("KillAura", "Attacks people for you.", Category.COMBAT);
         this.setSuffix(targeting::getValue);
     }
 
