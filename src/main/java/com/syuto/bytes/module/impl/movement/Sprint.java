@@ -18,7 +18,7 @@ public class Sprint extends Module {
 
 
     @EventHandler
-    void onPreUpdate(PreUpdateEvent event) {
+    public void onPreUpdate(PreUpdateEvent event) {
 
         if (mc.player.horizontalCollision && mc.player.isSprinting()) {
             mc.options.keySprint.setDown(false);
