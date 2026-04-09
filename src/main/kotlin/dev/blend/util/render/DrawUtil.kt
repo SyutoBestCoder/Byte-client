@@ -1,18 +1,25 @@
 package dev.blend.util.render
 
-import com.mojang.blaze3d.platform.GlStateManager
+import FontResource
+import com.mojang.blaze3d.opengl.GlDevice
+import com.mojang.blaze3d.opengl.GlStateManager
+import com.mojang.blaze3d.opengl.GlTexture
+import com.mojang.blaze3d.pipeline.RenderTarget
 import com.mojang.blaze3d.systems.RenderSystem
+import com.mojang.blaze3d.textures.GpuTexture
+import com.syuto.bytes.Byte
 import dev.blend.util.IAccessor
 import kotlinx.io.IOException
+import net.minecraft.client.Minecraft
 import org.lwjgl.nanovg.NVGColor
 import org.lwjgl.nanovg.NVGPaint
+import org.lwjgl.nanovg.NanoVG
 import org.lwjgl.nanovg.NanoVG.*
 import org.lwjgl.nanovg.NanoVGGL3
-import org.lwjgl.opengl.GL11
-import org.lwjgl.opengl.GL46
+import org.lwjgl.opengl.*
 import org.lwjgl.system.MemoryStack
 import java.awt.Color
-import java.lang.IllegalArgumentException
+
 
 object DrawUtil: IAccessor {
 
@@ -33,6 +40,9 @@ object DrawUtil: IAccessor {
 
     @JvmStatic
     fun begin() {
+        if (context == -1L) {
+            throw IllegalStateException("DrawUtil.initialize() was never called!")
+        }
         preRender()
         nvgBeginFrame(context, mc.window.width.toFloat(), mc.window.height.toFloat(), 1.0f)
         save()
@@ -66,7 +76,7 @@ object DrawUtil: IAccessor {
     fun restore() = nvgRestore(context)
 
     @JvmStatic
-    fun scale() = scale(mc.window.scaleFactor)
+    fun scale() = scale(mc.window.guiScale)
     @JvmStatic
     fun scale(scaleFactor: Number) = scale(scaleFactor, scaleFactor)
     @JvmStatic
@@ -251,6 +261,7 @@ object DrawUtil: IAccessor {
         }
         nvgClosePath(context)
     }
+
     @JvmStatic
     fun drawString(text: String, x: Number, y: Number, size: Number, gradient: Gradient, alignment: Alignment = Alignment.TOP_LEFT, font: FontResource = ResourceManager.FontResources.regular) {
         nvgBeginPath(context)
@@ -270,6 +281,7 @@ object DrawUtil: IAccessor {
         }
         nvgClosePath(context)
     }
+
     @JvmStatic
     fun getStringWidth(text: String, size: Number, font: FontResource = ResourceManager.FontResources.regular): Double {
         var width: Float
@@ -283,10 +295,6 @@ object DrawUtil: IAccessor {
         return width.toDouble()
     }
 
-    @JvmStatic
-    fun roundedImage(x: Number, y: Number, width: Number, height: Number, radius: Number, image: ImageResource) {
-
-    }
 
     // custom shit
 
@@ -335,18 +343,49 @@ object DrawUtil: IAccessor {
         }
     }
 
-    private fun preRender() {
-        RenderSystem.enableBlend()
-        RenderSystem.defaultBlendFunc()
-        RenderSystem.disableDepthTest()
-    }
-    private fun postRender() {
-        RenderSystem.disableCull()
-        RenderSystem.enableDepthTest()
-        RenderSystem.disableBlend()
 
-        RenderSystem.activeTexture(GL46.GL_TEXTURE0)
-        RenderSystem.bindTexture(0)
+    var previousFramebuffer: Int = -1;
+    var savedSampler: Int = 0
+
+    private fun preRender() {
+        val renderTarget: RenderTarget = Minecraft.getInstance().mainRenderTarget
+        previousFramebuffer = (renderTarget.getColorTexture() as GlTexture).getFbo(
+            (RenderSystem.getDevice() as GlDevice).directStateAccess(),
+            null
+        )
+
+        GlStateManager._glBindFramebuffer(GL46.GL_FRAMEBUFFER, previousFramebuffer)
+        GlStateManager._viewport(0, 0, renderTarget.width, renderTarget.height)
+
+        savedSampler = GL46.glGetInteger(GL46.GL_SAMPLER_BINDING)
+
+        GL46.glBindSampler(0, 0)
+
+        GlStateManager._disableDepthTest()
+        GlStateManager._disableCull()
+        GlStateManager._enableBlend()
+        GlStateManager._blendFuncSeparate(
+            GL46.GL_SRC_ALPHA,
+            GL46.GL_ONE_MINUS_SRC_ALPHA,
+            GL46.GL_ONE,
+            GL46.GL_ZERO
+        )
+
+
+
+    }
+
+    private fun postRender() {
+        GlStateManager._glBindFramebuffer(GL46.GL_FRAMEBUFFER, previousFramebuffer)
+        GL46.glBindSampler(0, savedSampler)
+
+        GlStateManager._enableCull()
+        GlStateManager._enableDepthTest()
+        GlStateManager._disableBlend()
+
+        GlStateManager._activeTexture(GL46.GL_TEXTURE0)
+        GlStateManager._bindTexture(0)
+
     }
 
     private fun alignX(x: Number, width: Number, alignment: Alignment): Float {

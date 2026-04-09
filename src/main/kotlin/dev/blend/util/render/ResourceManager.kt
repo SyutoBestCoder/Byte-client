@@ -1,5 +1,7 @@
 package dev.blend.util.render
 
+import FontResource
+
 object ResourceManager {
 
     @JvmStatic
@@ -10,10 +12,8 @@ object ResourceManager {
 
     object FontResources {
         lateinit var regular: FontResource
-        lateinit var ubuntu: FontResource
         fun init() {
             regular = FontResource("regular")
-            ubuntu = FontResource("ubuntu")
         }
     }
 

@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
@@ -19,8 +19,8 @@ import java.util.function.Supplier;
 @RequiredArgsConstructor
 public abstract class Module extends SettingHolder {
 
-    protected final MinecraftClient mc = MinecraftClient.getInstance();
-    protected float delta = mc.getRenderTickCounter().getTickDelta(true);
+    protected final Minecraft mc = Minecraft.getInstance();
+    protected float delta = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
     public final String name, description;
     public final Category category;
     public boolean enabled;
@@ -48,6 +48,7 @@ public abstract class Module extends SettingHolder {
                 //ChatUtils.print("Disabled " + this.name);
                 onDisable();
             }
+
         }
     }
 

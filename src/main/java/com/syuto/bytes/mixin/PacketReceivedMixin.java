@@ -4,24 +4,29 @@ package com.syuto.bytes.mixin;
 import com.syuto.bytes.Byte;
 import com.syuto.bytes.eventbus.impl.PacketReceivedEvent;
 import io.netty.channel.ChannelHandlerContext;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.PacketCallbacks;
-import net.minecraft.network.listener.ClientPlayPacketListener;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.server.network.ServerCommonNetworkHandler;
+import net.minecraft.network.Connection;
+import net.minecraft.network.PacketListener;
+import net.minecraft.network.protocol.Packet;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 
-@Mixin(ClientConnection.class)
+@Mixin(Connection.class)
 public class PacketReceivedMixin {
 
+    @Shadow
+    private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener packetListener) {}
+
+
+    @Shadow
+    private PacketListener packetListener;
 
     @Inject(
-            method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/packet/Packet;)V",
-            at = @At("HEAD"),
+            method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V",
+            at = @At(value = "INVOKE", target = "Lio/netty/channel/Channel;isOpen()Z"),
             cancellable = true
     )
     private void onPacketRead(ChannelHandlerContext ctx, Packet<?> packet, CallbackInfo ci) {
@@ -34,22 +39,13 @@ public class PacketReceivedMixin {
         }
 
         Packet<?> newPacket = event.getPacket();
-        if (newPacket != packet) {
-            ci.cancel();
+        PacketListener listener = this.packetListener;
 
-            ctx.fireChannelRead(newPacket);
+        if (listener != null) {
+            if (newPacket != packet) {
+                ci.cancel();
+                genericsFtw(newPacket, listener);
+            }
         }
     }
-
-
-    /*@Inject(at = @At("HEAD"), method = "send", cancellable = true)
-    public void handlePacket(Packet<?> packet, PacketCallbacks callbacks, CallbackInfo ci) {
-        Byte.LOGGER.info("Packet " + packet.getPacketId().toString());
-        PacketReceivedEvent e = new PacketReceivedEvent(packet);
-        Byte.INSTANCE.eventBus.post(e);
-
-        if (e.isCanceled()) {
-            ci.cancel();
-        }
-    }*/
 }

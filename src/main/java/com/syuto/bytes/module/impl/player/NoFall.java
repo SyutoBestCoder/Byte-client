@@ -8,12 +8,9 @@ import com.syuto.bytes.setting.impl.ModeSetting;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
 import com.syuto.bytes.utils.impl.player.MovementUtil;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
-import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
-
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+@Deprecated
 public class NoFall extends Module {
 
     public ModeSetting modes = new ModeSetting("mode",this,"Packet", "Spoof", "NoGround", "Grim");
@@ -27,7 +24,7 @@ public class NoFall extends Module {
 
     @EventHandler
     public void onPreMotion(PreMotionEvent event) {
-        boolean ground = mc.player.isOnGround();
+        boolean ground = mc.player.onGround();
 
         switch (modes.getValue()) {
             case "Packet" -> {
@@ -35,7 +32,7 @@ public class NoFall extends Module {
                     double x = mc.player.getX();
                     double y = mc.player.getY();
                     double z = mc.player.getZ();
-                    mc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, true, mc.player.horizontalCollision));
+                    mc.getConnection().send(new ServerboundMovePlayerPacket.Pos(x, y, z, true, mc.player.horizontalCollision));
                 }
             }
             case "Spoof" -> {
@@ -56,17 +53,17 @@ public class NoFall extends Module {
 
                 if (shouldNoFall) {
                     if (!jumpNextTick) {
-                        mc.getNetworkHandler().sendPacket(new ClientCommandC2SPacket(
+                        mc.getConnection().send(new ServerboundPlayerCommandPacket(
                                 player,
-                                ClientCommandC2SPacket.Mode.START_FALL_FLYING
+                                ServerboundPlayerCommandPacket.Action.START_FALL_FLYING
                         ));
 
-                        if (mc.player.isOnGround()) {
+                        if (mc.player.onGround()) {
                             jumpNextTick = true;
-                            mc.options.jumpKey.setPressed(true);
+                            mc.options.keyJump.setDown(true);
                         }
                     } else {
-                        mc.options.jumpKey.setPressed(false);
+                        mc.options.keyJump.setDown(false);
                         jumpNextTick = false;
                         shouldNoFall = false;
                     }

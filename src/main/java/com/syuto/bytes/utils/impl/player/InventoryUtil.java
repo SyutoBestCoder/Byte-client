@@ -1,57 +1,36 @@
 package com.syuto.bytes.utils.impl.player;
 
-import net.minecraft.block.Block;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.RegistryKey;
-
 import java.util.HashMap;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import com.syuto.bytes.mixin.KeyMappingAccessor;
+import com.syuto.bytes.utils.impl.keyboard.KeyUtil;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 import static com.syuto.bytes.Byte.mc;
 
 public class InventoryUtil {
 
-    public static int getBestHotbarSlotToBreakBlock(Block block) {
-        int slot = mc.player.getInventory().selectedSlot;
-        float bestSpeed = getBreakSpeed(
-                mc.player.getInventory().getStack(slot),
-                block
-        );
 
-        for (int i = 0; i < 9; i++) {
-            ItemStack itemStack = mc.player.getInventory().getStack(i);
-            float breakSpeed = getBreakSpeed(itemStack, block);
-            if (breakSpeed > bestSpeed) {
-                slot = i;
-                bestSpeed = breakSpeed;
-            }
-        }
-
-        return slot;
-    }
-
-    public static float getBreakSpeed(ItemStack item, Block block) {
-        float efficiencyMulti = item.isSuitableFor(block.getDefaultState()) ? (float) (Math.pow(getEnchantLevel(item, Enchantments.EFFICIENCY), 2) + 1) : 0;
-        return item.getMiningSpeedMultiplier(block.getDefaultState()) + efficiencyMulti;
-    }
-
-    public static HashMap<RegistryKey<Enchantment>, Integer> getEnchants(
+    public static HashMap<ResourceKey<Enchantment>, Integer> getEnchants(
             ItemStack item
     ) {
-        HashMap<RegistryKey<Enchantment>, Integer> enchantments =
+        HashMap<ResourceKey<Enchantment>, Integer> enchantments =
                 new HashMap<>();
 
-        ItemEnchantmentsComponent enchantmentsComponent =
-                EnchantmentHelper.getEnchantments(item);
+        ItemEnchantments enchantmentsComponent =
+                EnchantmentHelper.getEnchantmentsForCrafting(item);
 
         enchantmentsComponent
-                .getEnchantments()
+                .keySet()
                 .forEach(enchant -> {
                     enchantments.put(
-                            enchant.getKey().get(),
+                            enchant.unwrapKey().get(),
                             enchantmentsComponent.getLevel(enchant)
                     );
                 });
@@ -61,8 +40,14 @@ public class InventoryUtil {
 
     public static int getEnchantLevel(
             ItemStack item,
-            RegistryKey<Enchantment> enchantment
+            ResourceKey<Enchantment> enchantment
     ) {
         return getEnchants(item).getOrDefault(enchantment, 0);
     }
+
+
+    public static void setSlot(int slot) {
+        KeyUtil.pressKey(mc.options.keyHotbarSlots[slot]);
+    }
+
 }

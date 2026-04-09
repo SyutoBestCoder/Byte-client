@@ -5,18 +5,20 @@ import com.syuto.bytes.eventbus.impl.RenderTickEvent;
 import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.utils.impl.render.RenderUtils;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
+import dev.blend.util.render.Alignment;
+import dev.blend.util.render.DrawUtil;
+import dev.blend.util.render.ResourceManager;
+import org.joml.Matrix3x2fStack;
 
 import java.awt.*;
 import java.util.Collections;
 import java.util.List;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
+
+import static com.syuto.bytes.Byte.mc;
 
 public class RenderTest extends Module {
     public RenderTest() {
@@ -30,69 +32,37 @@ public class RenderTest extends Module {
 
     @EventHandler
     void onRenderTick(RenderTickEvent event) {
-        float delta = mc.getRenderTickCounter().getTickDelta(false);
-
-        for (Entity entity : mc.world.getEntities()) {
-            if (!(entity instanceof PlayerEntity en) || !isEntityInView(en) || !en.isAlive() || en == mc.player)
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof Player en) || !isEntityInView(en) || !en.isAlive() || en == mc.player)
                 continue;
 
-            int h = 0;
-            double x = en.prevX + (en.getX() - en.prevX) * delta;
-            double y = en.prevY + (en.getY() - en.prevY) * delta + en.getHeight() + 0.8;
-            double z = en.prevZ + (en.getZ() - en.prevZ) * delta;
+            Vec3 pos = en.getPosition(event.partialTicks);
+            Vec3 worldPos = new Vec3(pos.x, pos.y + en.getBbHeight() + 0.8, pos.z);
+            Vec3 screenPos = RenderUtils.worldToScreen(worldPos);
 
-            Vec3d worldPos = new Vec3d(x, y, z);
-            Vec3d screenPos = RenderUtils.worldToScreen(worldPos);
-
-
-            MatrixStack matrices = event.context.getMatrices();
             String name = en.getName().getString() + " " + String.format("%.1f", en.getHealth()) + "HP";
-            int nameWidth = mc.textRenderer.getWidth(name);
-            int nameHeight = mc.textRenderer.fontHeight;
+            double nameWidth = DrawUtil.getStringWidth(name, 12, ResourceManager.FontResources.regular);
+            double nameHeight = 12;
 
-            matrices.push();
-            matrices.translate(screenPos.x, screenPos.y, 0);
-            matrices.scale(1.0f, 1.0f, 1.0f);
+            double x = screenPos.x;
+            double y = screenPos.y;
 
-            float xx = -nameWidth / 2f;
-            float yy = 0;
-
-            RenderUtils.drawRect(
-                    event.context,
-                    xx + nameWidth /2,
-                    yy + nameHeight / 2,
-                    nameWidth + 2,
-                    nameHeight + 2,
-                    new Color(0,0,0,125).getRGB()
+            DrawUtil.begin();
+            DrawUtil.rect(
+                    x, y,
+                    nameWidth + 4, nameHeight + 4,
+                    new Color(0, 0, 0, 125),
+                    Alignment.TOP_CENTER
             );
-
-
-            RenderUtils.drawText(
-                    event.context,
+            DrawUtil.drawString(
                     name,
-                    -nameWidth / 2f,
-                    0,
-                    Color.WHITE.getRGB()
+                    x, y + 2,
+                    12,
+                    Color.WHITE,
+                    Alignment.TOP_CENTER,
+                    ResourceManager.FontResources.regular
             );
-
-            int itemSpacing = 15;
-            List<ItemStack> armor = new ArrayList<>();
-            armor.add(en.getMainHandStack());
-            armor.add(en.getOffHandStack());
-
-            en.getArmorItems().forEach(armor::add);
-
-
-            Collections.reverse(armor);
-
-            int totalWidth = armor.size() * itemSpacing;
-            int startX = (int) (xx + (nameWidth / 2f) - (totalWidth / 2f));
-
-            for (ItemStack item : armor) {
-                event.context.drawItem(item, startX, -20);
-                startX += itemSpacing;
-            }
-            matrices.pop();
+            DrawUtil.end();
         }
     }
 
@@ -102,15 +72,15 @@ public class RenderTest extends Module {
     public boolean isEntityInView(Entity entity) {
         Entity cameraEntity = mc.getCameraEntity();
         if (cameraEntity == null) return false;
-        Vec3d cameraLook = cameraEntity.getRotationVec(1.0F).normalize();
-        Vec3d toEntity = entity.getPos()
-                .add(0, entity.getStandingEyeHeight(), 0)
-                .subtract(cameraEntity.getCameraPosVec(1.0F))
+        Vec3 cameraLook = cameraEntity.getViewVector(1.0F).normalize();
+        Vec3 toEntity = entity.position()
+                .add(0, entity.getEyeHeight(), 0)
+                .subtract(cameraEntity.getEyePosition(1.0F))
                 .normalize();
 
-        double dot = cameraLook.dotProduct(toEntity);
+        double dot = cameraLook.dot(toEntity);
 
-        double fov = mc.options.getFov().getValue();
+        double fov = mc.options.fov().get();
         double fovRadians = Math.toRadians(fov);
         double threshold = Math.cos(fovRadians);
 

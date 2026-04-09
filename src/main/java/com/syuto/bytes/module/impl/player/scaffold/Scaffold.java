@@ -13,17 +13,15 @@ import com.syuto.bytes.utils.impl.player.WorldUtil;
 import com.syuto.bytes.utils.impl.render.AnimationUtils;
 import com.syuto.bytes.utils.impl.render.RenderUtils;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.*;
-import net.minecraft.util.shape.VoxelShape;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -48,7 +46,7 @@ public class Scaffold extends Module {
     @Override
     public void onEnable() {
         super.onEnable();
-        AnimationUtils.setSpoofedItem(mc.player.getStackInHand(Hand.MAIN_HAND));
+        AnimationUtils.setSpoofedItem(mc.player.getItemInHand(InteractionHand.MAIN_HAND));
         blockSlot = getBlockSlot();
 
     }
@@ -79,10 +77,49 @@ public class Scaffold extends Module {
             float target = rotations[0];
             float yaws = target - currentYaw;
             yaws %= 360.0f;
-            if (yaws > 180.0f) yaws-= 360.0f;
+            if (yaws > 180.0f) yaws -= 360.0f;
             if (yaws < -180.0f) yaws += 360.0f;
 
             rotations[0] = yaws + currentYaw;
+            // sweep 20 degrees around
+            float step = 1f;
+            float yawStep = 180/10;// try every 2 degrees
+
+
+            /*if (result != null
+                    && result.getType() == HitResult.Type.BLOCK
+                    && result.getSide() != blockData.getFacing()) {
+
+                boolean found = false;
+
+                for (float yOffset = -180; yOffset <= 180 && !found; yOffset += yawStep) {
+                    for (float pitchOffset = 0; pitchOffset <= 90; pitchOffset += step) {
+
+                        float yaw = rotations[0] + yOffset;
+                        float pitch = rotations[1] - pitchOffset;
+
+                        ChatUtils.print("P " + pitchOffset + " " + pitch);
+
+                        result = PlayerUtil.raycastBlocks(
+                                yaw,
+                                pitch,
+                                5,
+                                mc.getRenderTickCounter().getTickDelta(false),
+                                false
+                        );
+
+                        if (result  != null
+                                && result.getType() == HitResult.Type.BLOCK
+                                && result.getSide() == blockData.getFacing()) {
+
+                            ChatUtils.print("loop");
+                            found = true;   // break BOTH loops
+                            break;          // break inner loop
+                        }
+                    }
+                }
+            }*/
+
 
 
             rotations = RotationUtils.getFixedRotation(rotations, lastRotations); // gcd fix
@@ -92,7 +129,7 @@ public class Scaffold extends Module {
         }
 
 
-        if (mc.player.isOnGround() && mc.options.pickItemKey.isPressed()) {
+        if (mc.player.onGround() && mc.options.keyPickItem.isDown()) {
             float currentYaw = RotationUtils.getRotationYaw();
             float target = rotations[0] + 180;
             float yaws = target - currentYaw;
@@ -114,7 +151,6 @@ public class Scaffold extends Module {
 
     @EventHandler
     public void onPreUpdate(PreUpdateEvent event) {
-
         blockSlot = getBlockSlot();
         if (blockSlot != -1) {
             mc.player.getInventory().setSelectedSlot(blockSlot);
@@ -123,24 +159,48 @@ public class Scaffold extends Module {
         this.blockData = getBlockData();
 
         if (rotations != null && blockData != null) {
-            if (mc.player.getInventory().getStack(mc.player.getInventory().selectedSlot).getItem() != Blocks.AIR.asItem()) {
+
+            /*result = PlayerUtil.raycastBlocks(
+                    RotationUtils.getRotationYaw(),
+                    RotationUtils.getRotationPitch(),
+                    4,
+                    mc.getRenderTickCounter().getTickDelta(false),
+                    true
+            );*/
+            if (mc.player.getInventory().getItem(mc.player.getInventory().getSelectedSlot()).getItem() != Blocks.AIR.asItem()) {
+
+               /* if (result != null) {
+                    ChatUtils.print("Result Not null");
+                    if (result.getType() == HitResult.Type.BLOCK) {
+                        ChatUtils.print("Hit Block");
+                        if (result.getBlockPos().equals(blockData.getPosition())) {
+                            ChatUtils.print("Hit Pos");
+                            if (result.getSide() == blockData.getFacing()) {
+                                ChatUtils.print("Hit Side");
+                                place(blockData);
+                            }
+                        }
+                    }
+                }
+                */
                 place(blockData);
+
                 //raycast
             }
         }
 
         mc.player.setSprinting(false);
-        mc.options.sprintKey.setPressed(false);
+        mc.options.keySprint.setDown(false);
 
-        if (mc.options.pickItemKey.isPressed()) {
-            if (mc.player.isOnGround() && MovementUtil.isMoving()) {
-                mc.options.jumpKey.setPressed(true);
+        if (mc.options.keyPickItem.isDown()) {
+            if (mc.player.onGround() && MovementUtil.isMoving()) {
+                mc.options.keyJump.setDown(true);
                 mc.player.setSprinting(true);
-                mc.options.sprintKey.setPressed(true);
+                mc.options.keySprint.setDown(true);
             } else {
-                mc.options.jumpKey.setPressed(false);
+                mc.options.keyJump.setDown(false);
                 mc.player.setSprinting(false);
-                mc.options.sprintKey.setPressed(false);
+                mc.options.keySprint.setDown(false);
             }
         }
     }
@@ -150,7 +210,7 @@ public class Scaffold extends Module {
         if (blockData != null) {
             RenderUtils.drawLine(
                     event.matrixStack,
-                    mc.player.getEyePos(),
+                    mc.player.getEyePosition(),
                     blockData.getHit(),
                     Color.magenta.getRGB()
             );
@@ -167,7 +227,7 @@ public class Scaffold extends Module {
                 false
         );
 
-        boolean keepY = mc.options.pickItemKey.isPressed();
+        boolean keepY = mc.options.keyPickItem.isDown();
         if (keepY && blockData.getFacing() == Direction.UP) {
            // ChatUtils.print("Skip");
             return;
@@ -175,8 +235,8 @@ public class Scaffold extends Module {
 
         //if (mc.options.pickItemKey.isPressed() && blockData.getFacing() == Direction.UP) return;
 
-        mc.interactionManager.interactBlock(mc.player, mc.player.getActiveHand(), result);
-        mc.player.swingHand(Hand.MAIN_HAND);
+        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, result);
+        mc.player.swing(InteractionHand.MAIN_HAND);
 
         //ChatUtils.print("Placed block " + blockData.getFacing().asString());
 
@@ -185,7 +245,7 @@ public class Scaffold extends Module {
 
 
     private BlockData getBlockData() {
-        BlockPos playerPos = mc.player.getBlockPos();
+        BlockPos playerPos = mc.player.blockPosition();
 
         playerPos = new BlockPos(
                 playerPos.getX(),
@@ -193,7 +253,7 @@ public class Scaffold extends Module {
                 playerPos.getZ()
         );
 
-        if (!mc.world.getBlockState(playerPos).isReplaceable()) {
+        if (!mc.level.getBlockState(playerPos).canBeReplaced()) {
             return null;
         }
 
@@ -202,12 +262,12 @@ public class Scaffold extends Module {
         for (int x = -RADIUS; x <= RADIUS ; x++) {
             for (int y = -RADIUS; y <= 0; y++) {
                 for (int z = -RADIUS ; z <= RADIUS; z++) {
-                    BlockPos pos = playerPos.add(x, y, z);
+                    BlockPos pos = playerPos.offset(x, y, z);
 
-                    if (!mc.world.getBlockState(pos).isReplaceable() && !canInteract(pos)) {
+                    if (!mc.level.getBlockState(pos).canBeReplaced() && !canInteract(pos)) {
                         for (Direction direction : Direction.values()) {
                             if (direction != Direction.DOWN) {
-                                BlockPos blockPos = pos.offset(direction);
+                                BlockPos blockPos = pos.relative(direction);
                                 if (WorldUtil.canPlace(blockPos)) {
                                     candidates.add(pos);
                                 }
@@ -225,11 +285,11 @@ public class Scaffold extends Module {
 
         BlockPos finalPlayerPos = playerPos;
         candidates.sort(Comparator.comparingDouble(pos ->
-                pos.getSquaredDistance(finalPlayerPos.toCenterPos())));
+                pos.distToCenterSqr(finalPlayerPos.getCenter())));
 
         BlockPos blockPos = candidates.getFirst();
         Direction facing = getFacing(blockPos, playerPos);
-        int blockFacing = facing.getId();
+        int blockFacing = facing.get3DDataValue();
 
         /*Vec3d coord = new Vec3d(
                 getCoord(blockFacing, "x"),
@@ -237,8 +297,8 @@ public class Scaffold extends Module {
                 getCoord(blockFacing, "z")
         );*/
 
-        Vec3d hit = getClosestPoint(blockPos, facing); //blockPos.toCenterPos().add(coord);
-        ChatUtils.print("h" + hit);
+        Vec3 hit = getClosestPoint(blockPos, facing); //blockPos.toCenterPos().add(coord);
+       // ChatUtils.print("h" + hit);
         return new BlockData(blockPos, hit, facing);
     }
 
@@ -259,11 +319,13 @@ public class Scaffold extends Module {
         for (Direction facing : Direction.values()) {
             if (facing == Direction.DOWN) continue;
 
-            BlockPos pos = blockPos.offset(facing);
+            BlockPos pos = blockPos.relative(facing);
 
             if (pos.getY() <= blockPos1.getY()) {
-                Vec3d center = Vec3d.ofCenter(pos);
-                double distance = mc.player.getPos().distanceTo(center);
+                Vec3 center = Vec3.atCenterOf(pos);
+
+                Vec3 posssss = new Vec3(mc.player.getX(), mc.player.getY(), mc.player.getZ());
+                double distance = posssss.distanceTo(center);
 
                 if (distance < closestDistance || bestFacing == null) {
                     closestDistance = distance;
@@ -274,18 +336,19 @@ public class Scaffold extends Module {
         return bestFacing;
     }
 
-    public Vec3d getClosestPoint(BlockPos pos, Direction face) {
-        Vec3d eye = mc.player.getEyePos();
+    public Vec3 getClosestPoint(BlockPos pos, Direction face) {
+        Vec3 eye = mc.player.getEyePosition();
 
-        double down = 0.2 + Math.random() * 0.3;;
+        double ma = Math.max(Math.random() * 0.3, 0.5);
+        double down = 0.2 + ma;
 
         ChatUtils.print(down);
 
-        double cx = MathHelper.clamp(eye.x, pos.getX(), pos.getX() + 1);
-        double cy = MathHelper.clamp(eye.y, pos.getY() - down, pos.getY() + down);
-        double cz = MathHelper.clamp(eye.z, pos.getZ(), pos.getZ() + 1);
+        double cx = Mth.clamp(eye.x, pos.getX(), pos.getX() + 1);
+        double cy = Mth.clamp(eye.y, pos.getY() - down, pos.getY() + down);
+        double cz = Mth.clamp(eye.z, pos.getZ(), pos.getZ() + 1);
 
-        Vec3d hit = new Vec3d(cx, cy, cz);
+        Vec3 hit = new Vec3(cx, cy, cz);
 
         return hit;
     }
@@ -295,7 +358,7 @@ public class Scaffold extends Module {
         int largestStackSize = 0;
 
         for (int slot = 0; slot < 9; slot++) {
-            ItemStack itemStack = mc.player.getInventory().getStack(slot);
+            ItemStack itemStack = mc.player.getInventory().getItem(slot);
 
             if (!itemStack.isEmpty() && itemStack.getItem() instanceof BlockItem) {
                 int stackSize = itemStack.getCount();
@@ -309,6 +372,7 @@ public class Scaffold extends Module {
     }
 
     private boolean canInteract(BlockPos pos) {
-        return mc.player.getPos().distanceTo(pos.toCenterPos()) > mc.player.getBlockInteractionRange();
+        Vec3 po = new Vec3(mc.player.getX(), mc.player.getY(), mc.player.getZ());
+        return po.distanceTo(pos.getCenter()) > mc.player.blockInteractionRange();
     }
 }

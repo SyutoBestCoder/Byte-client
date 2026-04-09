@@ -4,16 +4,15 @@ import com.mojang.authlib.GameProfile;
 import com.syuto.bytes.Byte;
 import com.syuto.bytes.eventbus.impl.*;
 import com.syuto.bytes.module.ModuleManager;
-import com.syuto.bytes.module.impl.movement.NoSlow;
-import com.syuto.bytes.module.impl.render.RenderingTest;
+import com.syuto.bytes.module.impl.movement.MovementFix;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayNetworkHandler;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -25,32 +24,32 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import static com.syuto.bytes.Byte.mc;
 
-@Mixin(ClientPlayerEntity.class)
-public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity {
+@Mixin(LocalPlayer.class)
+public abstract class ClientPlayerEntityMixin extends AbstractClientPlayer {
 
-    public ClientPlayerEntityMixin(ClientWorld world, GameProfile profile) {
+    public ClientPlayerEntityMixin(ClientLevel world, GameProfile profile) {
         super(world, profile);
     }
 
-    @Shadow protected abstract void sendSprintingPacket();
+    @Shadow protected abstract void sendIsSprintingIfNeeded();
 
-    @Shadow protected abstract boolean isCamera();
+    @Shadow protected abstract boolean isControlledCamera();
 
-    @Shadow private double lastX;
+    @Shadow private double xLast;
 
-    @Shadow private double lastBaseY;
+    @Shadow private double yLast;
 
-    @Shadow private double lastZ;
+    @Shadow private double zLast;
 
-    @Shadow private float lastYaw;
+    @Shadow private float yRotLast;
 
-    @Shadow private float lastPitch;
+    @Shadow private float xRotLast;
 
-    @Shadow public abstract boolean isSneaking();
+    @Shadow public abstract boolean isShiftKeyDown();
 
-    @Shadow private int ticksSinceLastPositionPacketSent;
+    @Shadow private int positionReminder;
 
-    @Shadow @Final public ClientPlayNetworkHandler networkHandler;
+    @Shadow @Final public ClientPacketListener connection;
 
     @Shadow private boolean lastOnGround;
 
@@ -58,18 +57,11 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
 
     @Shadow private boolean autoJumpEnabled;
 
-    @Shadow @Final protected MinecraftClient client;
-
-
-    @Shadow protected abstract boolean isBlind();
-
-    @Shadow public abstract boolean shouldSlowDown();
-
-    @Shadow protected abstract boolean isRidingCamel();
+    @Shadow @Final protected Minecraft minecraft;
 
     @Shadow public abstract boolean isUsingItem();
 
-    @Shadow public abstract boolean isSubmergedInWater();
+    @Shadow public abstract boolean isUnderWater();
 
 
     @Inject(
@@ -77,47 +69,48 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
             method = "tick"
     )
     public void start(CallbackInfo ci) {
-        RotationUtils.setCamYaw(mc.player.getYaw());
+        RotationUtils.setCamYaw(mc.player.getYRot());
+        RotationUtils.setCamPitch(mc.player.getXRot());
 
         RotationUtils.setLastRotationYaw(RotationUtils.getRotationYaw());
         RotationUtils.setLastRotationPitch(RotationUtils.getRotationPitch());
 
         RotationEvent rotationEvent = new RotationEvent(
-                this.getYaw(),
-                this.getPitch()
+                this.getYRot(),
+                this.getXRot()
         );
 
         Byte.INSTANCE.eventBus.post(rotationEvent);
 
-        RotationUtils.yawChanged = rotationEvent.getYaw() != this.getYaw();
-        RotationUtils.pitchChanged = rotationEvent.getPitch() != this.getPitch();
+        RotationUtils.yawChanged = rotationEvent.getYaw() != this.getYRot();
+        RotationUtils.pitchChanged = rotationEvent.getPitch() != this.getXRot();
 
         RotationUtils.setRotationYaw(rotationEvent.getYaw());
         RotationUtils.setRotationPitch(rotationEvent.getPitch());
 
 
 
-        RenderingTest test = ModuleManager.getModule(RenderingTest.class);
+        MovementFix test = ModuleManager.getModule(MovementFix.class);
         if (test != null && test.isEnabled()) {
-            mc.player.setYaw(RotationUtils.getRotationYaw());
-           // mc.player.setPitch(RotationUtils.getRotationPitch());
+            mc.player.setYRot(RotationUtils.getRotationYaw());
+            mc.player.setXRot(RotationUtils.getRotationPitch());
         }
     }
 
     @Inject(
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/ClientPlayerEntity;sendSneakingPacket()V"),
+            at = @At(value = "TAIL"),
             method = "tick"
     )
 
     public void end(CallbackInfo ci) {
-        RenderingTest test = ModuleManager.getModule(RenderingTest.class);
+        MovementFix test = ModuleManager.getModule(MovementFix.class);
         if (test != null && test.isEnabled()) {
-            mc.player.setYaw(RotationUtils.getCamYaw());
-           // mc.player.setPitch(RotationUtils.getCamPitch());
+            mc.player.setYRot(RotationUtils.getCamYaw());
+            mc.player.setXRot(RotationUtils.getCamPitch());
         }
     }
 
-    @Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/AbstractClientPlayerEntity;tick()V"), method = "tick")
+    @Inject(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/AbstractClientPlayer;tick()V"), method = "tick")
     public void onPreUpdate(CallbackInfo ci) {
 
         Byte.INSTANCE.eventBus.post(new PreUpdateEvent());
@@ -127,8 +120,9 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
      * @author
      * @reason
      */
+
     @Overwrite
-    private void sendMovementPackets() {
+    private void sendPosition() {
         PreMotionEvent event = new PreMotionEvent(
                 this.getX(),
                 this.getBoundingBox().minY,
@@ -137,50 +131,50 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
                 RotationUtils.getRotationPitch(),
                 RotationUtils.getLastRotationYaw(),
                 RotationUtils.getLastRotationPitch(),
-                this.isOnGround(),
-                this.isSneaking(),
+                this.onGround(),
+                this.isShiftKeyDown(),
                 this.isSprinting(),
                 this.horizontalCollision
         );
 
-        this.sendSprintingPacket();
-        if (this.isCamera()) {
+        this.sendIsSprintingIfNeeded();
+        if (this.isControlledCamera()) {
 
             Byte.INSTANCE.eventBus.post(event);
 
-            double d = event.posX - this.lastX;
-            double e = event.posY - this.lastBaseY;
-            double f = event.posZ - this.lastZ;
+            double d = event.posX - this.xLast;
+            double e = event.posY - this.yLast;
+            double f = event.posZ - this.zLast;
             double g = (double)(event.yaw - event.lastYaw);
             double h = (double)(event.pitch - event.lastPitch);
-            ++this.ticksSinceLastPositionPacketSent;
-            boolean bl = MathHelper.squaredMagnitude(d, e, f) > MathHelper.square(2.0E-4) || this.ticksSinceLastPositionPacketSent >= 20;
+            ++this.positionReminder;
+            boolean bl = Mth.lengthSquared(d, e, f) > Mth.square(2.0E-4) || this.positionReminder >= 20;
             boolean bl2 = g != 0.0 || h != 0.0;
             if (bl && bl2) {
-                this.networkHandler.sendPacket(new PlayerMoveC2SPacket.Full(event.posX, event.posY, event.posZ, event.yaw, event.pitch, event.onGround, event.horizontalCollision));
+                this.connection.send(new ServerboundMovePlayerPacket.PosRot(event.posX, event.posY, event.posZ, event.yaw, event.pitch, event.onGround, event.horizontalCollision));
             } else if (bl) {
-                this.networkHandler.sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(event.posX, event.posY, event.posZ, event.onGround, event.horizontalCollision));
+                this.connection.send(new ServerboundMovePlayerPacket.Pos(event.posX, event.posY, event.posZ, event.onGround, event.horizontalCollision));
             } else if (bl2) {
-                this.networkHandler.sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(event.yaw, event.pitch, event.onGround, event.horizontalCollision));
+                this.connection.send(new ServerboundMovePlayerPacket.Rot(event.yaw, event.pitch, event.onGround, event.horizontalCollision));
             } else if (this.lastOnGround != event.onGround ||  this.lastHorizontalCollision != event.horizontalCollision) {
-                this.networkHandler.sendPacket(new PlayerMoveC2SPacket.OnGroundOnly(event.onGround, event.horizontalCollision));
+                this.connection.send(new ServerboundMovePlayerPacket.StatusOnly(event.onGround, event.horizontalCollision));
             }
 
             if (bl) {
-                this.lastX = event.posX;
-                this.lastBaseY = event.posY;
-                this.lastZ = event.posZ;
-                this.ticksSinceLastPositionPacketSent = 0;
+                this.xLast = event.posX;
+                this.yLast = event.posY;
+                this.zLast = event.posZ;
+                this.positionReminder = 0;
             }
 
             if (bl2) {
-                this.lastYaw = event.yaw;
-                this.lastPitch = event.pitch;
+                this.yRotLast = event.yaw;
+                this.xRotLast = event.pitch;
             }
 
             this.lastOnGround = event.onGround;
             this.lastHorizontalCollision = event.horizontalCollision;
-            this.autoJumpEnabled = (Boolean)this.client.options.getAutoJump().getValue();
+            this.autoJumpEnabled = (Boolean)this.minecraft.options.autoJump().get();
         }
         PostMotionEvent eventt = new PostMotionEvent();
         Byte.INSTANCE.eventBus.post(eventt);
@@ -192,28 +186,15 @@ public abstract class ClientPlayerEntityMixin extends AbstractClientPlayerEntity
      * @reason
      */
 
-    @Overwrite
-    private boolean shouldStopSprinting() {
-        NoSlow noslow = ModuleManager.getModule(NoSlow.class);
-        return this.isGliding() || this.isBlind() || this.shouldSlowDown() || this.hasVehicle() && !this.isRidingCamel() || (noslow != null && !noslow.isEnabled() && this.isUsingItem() && !this.hasVehicle() && !this.isSubmergedInWater());
+
+
+    @Inject(
+            at = @At("HEAD"),
+            method = "move"
+
+    )
+    private void moveHead(CallbackInfo ci) {
+        Byte.INSTANCE.eventBus.post(new PlayerMoveEvent());
     }
-
-
-    @Redirect(method = "tickMovement", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/network/ClientPlayerEntity;isUsingItem()Z"))
-    private boolean noSlow(ClientPlayerEntity instance) {
-        SlowDownEvent event = new SlowDownEvent(SlowDownEvent.Mode.Item);
-
-        Byte.INSTANCE.eventBus.post(event);
-
-        NoSlow noslow = ModuleManager.getModule(NoSlow.class);
-
-        if (noslow != null) {
-            if (noslow.isEnabled() && event.isCanceled()) {
-                return false;
-            }
-        }
-        return instance.isUsingItem();
-    }
-
 
 }

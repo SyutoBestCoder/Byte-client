@@ -13,20 +13,14 @@ import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import com.syuto.bytes.utils.impl.player.WorldUtil;
 import com.syuto.bytes.utils.impl.render.RenderUtils;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-
 import java.awt.*;
 import java.util.List;
 import java.util.stream.IntStream;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
 
 import static com.syuto.bytes.Byte.mc;
 
@@ -50,7 +44,7 @@ public class Test extends Module {
     void onRenderWorld(RenderWorldEvent event) {
         if (pos != null && !pos.isEmpty()) {
             for (BlockPos po : pos) {
-                Block e = mc.world.getBlockState(po).getBlock();
+                Block e = mc.level.getBlockState(po).getBlock();
                 if (e == Blocks.DIAMOND_ORE || e == Blocks.DEEPSLATE_DIAMOND_ORE) {
                     RenderUtils.renderBlock(po, event, Color.CYAN);
                 } else if (e == Blocks.IRON_ORE || e == Blocks.DEEPSLATE_IRON_ORE) {
@@ -74,7 +68,7 @@ public class Test extends Module {
 
     @EventHandler
     void onPreUpdate(PreUpdateEvent event) {
-        pos = WorldUtil.findAllOres(mc.player.getBlockPos(), range.getValue().intValue());
+        pos = WorldUtil.findAllOres(mc.player.blockPosition(), range.getValue().intValue());
 
         /*ticks = mc.player.isOnGround() ? 0 : ticks + 1;
 
@@ -119,14 +113,14 @@ public class Test extends Module {
     private void place(BlockPos pos, Direction direction) {
         //ChatUtils.print(direction.asString());
         BlockHitResult result = new BlockHitResult(
-                pos.toCenterPos(),
+                pos.getCenter(),
                 direction,
                 pos,
                 false
         );
 
-        mc.interactionManager.interactBlock(mc.player, mc.player.getActiveHand(), result);
-        mc.player.swingHand(mc.player.getActiveHand());
+        mc.gameMode.useItemOn(mc.player, mc.player.getUsedItemHand(), result);
+        mc.player.swing(mc.player.getUsedItemHand());
 
     }
 

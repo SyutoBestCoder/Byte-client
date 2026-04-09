@@ -15,21 +15,20 @@ import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import com.syuto.bytes.utils.impl.render.AnimationUtils;
 import com.syuto.bytes.utils.impl.render.RenderUtils;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.c2s.play.*;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.EntityHitResult;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
 
 
+@Deprecated
 public class Killaura extends Module {
 
     private final ModeSetting targeting = new ModeSetting("Target Mode", this, "Single", "Switch");
@@ -40,8 +39,8 @@ public class Killaura extends Module {
     private final ModeSetting autoBlock = new ModeSetting("Autoblock", this, "None", "Fake", "Vanilla");
 
     private long lastSwitchTime, attackDelay, lastAttackTime;
-    private final List<PlayerEntity> targets = new ArrayList<>();
-    public static PlayerEntity target;
+    private final List<Player> targets = new ArrayList<>();
+    public static Player target;
     private float[] rotations, lastRotation;
     private boolean shouldAttack, firstBlock, blocking;
     private int targetIndex = 0, ticks;
@@ -55,7 +54,7 @@ public class Killaura extends Module {
     public void onDisable() {
 
         if (this.blocking) {
-            mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, Direction.DOWN));
+            mc.getConnection().send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN));
             this.blocking = false;
             ChatUtils.print("Unblocked on post prolly this will ban at some point xD.");
         }
@@ -88,17 +87,14 @@ public class Killaura extends Module {
             ticks++;
 
 
-            handleAutoBlock();
-            executeAttack(null);
-
-            /*if (result != null && result.getEntity().equals(this.target)) {
+            if (result != null && result.getEntity().equals(this.target)) {
                 handleAutoBlock();
                 executeAttack(result);
-            }*/
+            }
         }
 
         if (blocking && target == null) {
-            mc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.RELEASE_USE_ITEM, BlockPos.ORIGIN, Direction.DOWN));;
+            mc.getConnection().send(new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, BlockPos.ZERO, Direction.DOWN));;
             this.blocking = false;
             ChatUtils.print("Unblocked");
         }
@@ -112,7 +108,7 @@ public class Killaura extends Module {
         if (target != null) {
             rotations = RotationUtils.getRotations(
                     lastRotation,
-                    mc.player.getEyePos(),
+                    mc.player.getEyePosition(),
                     target
             );
 
@@ -128,7 +124,7 @@ public class Killaura extends Module {
 
             rotations = RotationUtils.getFixedRotation(rotations, lastRotation);
 
-            if (canSwing(target)) {
+            if (canAttack(target)) {
                 event.setYaw(rotations[0]);
                 event.setPitch(rotations[1]);
 
@@ -139,8 +135,8 @@ public class Killaura extends Module {
 
     @EventHandler
     void onPacketSent(PacketSentEvent event) {
-        if (event.getPacket() instanceof PlayerActionC2SPacket e) {
-            if (target != null && e.getAction() == PlayerActionC2SPacket.Action.RELEASE_USE_ITEM) {
+        if (event.getPacket() instanceof ServerboundPlayerActionPacket e) {
+            if (target != null && e.getAction() == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
                 ChatUtils.print("C07 " + e.getAction() + " " + ticks);
                 event.setCanceled(true);
             }
@@ -161,103 +157,8 @@ public class Killaura extends Module {
                 updateAttackDelay();
                 shouldAttack = true;
             }
-
-            DrawContext context = e.context;
-
-            MatrixStack matrixStack = context.getMatrices();
-
-            float height = mc.getWindow().getScaledHeight();
-            float width = mc.getWindow().getScaledWidth();
-
-            float left = width / 2 + 50;
-            float right = left + 160;
-            float top = height / 2 + 50;
-            float bottom = top + 40;
-
-            float currentHealth = target.getMaxHealth() + target.getAbsorptionAmount();
-            float maxHealth = target.getHealth() / currentHealth;
-            float health = target.getHealth() + target.getAbsorptionAmount();
-
-            Color healthColor = maxHealth < 0.3D ? Color.RED : (maxHealth < 0.5D ? Color.orange : (maxHealth < 0.7D ? Color.yellow : Color.green));
-
-            String name = target.getName().getString();
-
-            float hbX = width / 2 + 55;
-            float hbeX = hbX + (150 * maxHealth);
-
-            float hbY = top + 30;
-            float hbeY = hbY + 5;
-            float g = hbX + 150;
-
-            float gg = hbX + 140;
-
-            RenderUtils.drawRect(
-                    matrixStack,
-                    left,
-                    right,
-                    top,
-                    bottom,
-                    new Color(0,0,0, 75).getRGB()
-            );
-
-            RenderUtils.drawRect(
-                    matrixStack,
-                    hbX,
-                    g,
-                    hbY,
-                    hbeY,
-                    healthColor.darker().getRGB()
-            );
-
-            RenderUtils.drawRect(
-                    matrixStack,
-                    hbX,
-                    hbeX,
-                    hbY,
-                    hbeY,
-                    healthColor.getRGB()
-            );
-
-            RenderUtils.drawRectOutline(
-                    matrixStack,
-                    left,
-                    right,
-                    top,
-                    bottom,
-                    healthColor.getRGB()
-            );
-
-            float y = ((top + bottom) - mc.textRenderer.fontHeight) / 2;
-
-            RenderUtils.drawText(
-                    context,
-                    name,
-                    hbX,
-                    y,
-                    Color.WHITE.getRGB()
-            );
-
-            String text = String.format("%.1f", health) + " HP";
-            RenderUtils.drawText(
-                    context,
-                    text,
-                    gg - mc.textRenderer.getWidth(text),
-                    y,
-                    Color.WHITE.getRGB()
-            );
-
-            float hh = mc.player.getHealth() + mc.player.getAbsorptionAmount();
-            String xx = hh > health ? "W" : "L";
-            Color xxg = hh > health ? Color.GREEN : Color.RED;
-            RenderUtils.drawText(
-                    context,
-                    xx,
-                    g - mc.textRenderer.getWidth(xx),
-                    y,
-                    xxg.getRGB()
-            );
-
         }
+
 
 
     }
@@ -273,7 +174,7 @@ public class Killaura extends Module {
 
             RenderUtils.drawLine(
                     e.matrixStack,
-                    mc.player.getEyePos(),
+                    mc.player.getEyePosition(),
                     PlayerUtil.getClosestPoint(target),
                     Color.MAGENTA.getRGB()
             );
@@ -285,9 +186,9 @@ public class Killaura extends Module {
         lastSwitchTime = System.currentTimeMillis();
 
         targets.clear();
-        targets.addAll(mc.world.getPlayers().stream()
+        targets.addAll(mc.level.players().stream()
                 .filter(ent -> ent != mc.player && canAttack(ent))
-                .sorted(Comparator.comparingDouble(PlayerEntity::getHealth))
+                .sorted(Comparator.comparingDouble(Player::getHealth))
                 .limit(4)
                 .toList());
 
@@ -300,18 +201,18 @@ public class Killaura extends Module {
     }
 
     private void updateSingleTarget() {
-        target = mc.world.getPlayers().stream()
+        target = mc.level.players().stream()
                 .filter(this::canAttack)
-                .min(Comparator.comparingDouble(PlayerEntity::getHealth))
+                .min(Comparator.comparingDouble(Player::getHealth))
                 .orElse(null);
     }
 
-    private boolean canAttack(PlayerEntity entity) {
+    private boolean canAttack(Player entity) {
         double distance = PlayerUtil.getBiblicallyAccurateDistanceToEntity(entity);
         return entity != mc.player && distance <= swing.getValue().doubleValue() && entity.isAlive();
     }
 
-    private boolean canSwing(PlayerEntity entity) {
+    private boolean canSwing(Player entity) {
         double distance = PlayerUtil.getBiblicallyAccurateDistanceToEntity(entity);
         Scaffold scaffold = ModuleManager.getModule(Scaffold.class);
         return (scaffold != null && !scaffold.isEnabled()) && entity != mc.player && distance <= reach.getValue().doubleValue() && entity.isAlive();
@@ -324,41 +225,41 @@ public class Killaura extends Module {
     private void handleAutoBlock() {
         if (autoBlock.getValue().equals("Vanilla")) {
             //swapSlots();
-            block(mc.player.getYaw(), mc.player.getPitch());
+            block(mc.player.getYRot(), mc.player.getXRot());
         }
     }
 
     private void executeAttack(EntityHitResult r) {
-        if (canSwing(target) && mc.player.getAttackCooldownProgress(0.5f) >= 1.0) { //shouldAttack mc.player.getAttackCooldownProgress(0.5f) >= 1.0
+        if (canSwing(target) && mc.player.getAttackStrengthScale(0.5f) >= 1.0) { //shouldAttack mc.player.getAttackCooldownProgress(0.5f) >= 1.0
 
             handleAutoBlock();
 
-            mc.interactionManager.attackEntity(mc.player, target);
-            mc.player.swingHand(Hand.MAIN_HAND);
+            mc.gameMode.attack(mc.player, target);
+            mc.player.swing(InteractionHand.MAIN_HAND);
             shouldAttack = false;
         }
     }
 
     private void swapSlots() {
-        mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(mc.player.getInventory().selectedSlot % 7 + 2));
-        mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(mc.player.getInventory().selectedSlot));
+        mc.getConnection().send(new ServerboundSetCarriedItemPacket(mc.player.getInventory().getSelectedSlot() % 7 + 2));
+        mc.getConnection().send(new ServerboundSetCarriedItemPacket(mc.player.getInventory().getSelectedSlot()));
         blocking = false;
     }
     
 
     private void block(float yaw, float pitch) {
-        mc.getNetworkHandler().sendPacket(new PlayerInteractItemC2SPacket(Hand.MAIN_HAND, 0, yaw, pitch));
+        mc.getConnection().send(new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, yaw, pitch));
         blocking = true;
     }
 
     private void unblock() {
-        SendPacketMixinAccessor silent = (SendPacketMixinAccessor) mc.getNetworkHandler();
-        silent.getConnection().send(
-                new PlayerActionC2SPacket(
-                        PlayerActionC2SPacket
+        SendPacketMixinAccessor silent = (SendPacketMixinAccessor) mc.getConnection();
+        silent.byte$getConnection().send(
+                new ServerboundPlayerActionPacket(
+                        ServerboundPlayerActionPacket
                                 .Action
                                 .RELEASE_USE_ITEM,
-                        BlockPos.ORIGIN,
+                        BlockPos.ZERO,
                         Direction.DOWN
                 )
         );

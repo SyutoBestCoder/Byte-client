@@ -1,7 +1,6 @@
 package com.syuto.bytes.commands;
 
 import com.syuto.bytes.commands.impl.Bind;
-import com.syuto.bytes.commands.impl.Pathfind;
 import com.syuto.bytes.commands.impl.Toggle;
 import com.syuto.bytes.eventbus.EventHandler;
 import com.syuto.bytes.eventbus.impl.ChatEvent;
@@ -22,7 +21,6 @@ public class CommandManager {
     private void registerAllCommands() {
         commands.add(new Bind());
         commands.add(new Toggle());
-        commands.add(new Pathfind());
     }
 
 

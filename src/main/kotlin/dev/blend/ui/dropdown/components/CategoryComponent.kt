@@ -1,5 +1,6 @@
 package dev.blend.ui.dropdown.components
 
+import com.syuto.bytes.Byte
 import com.syuto.bytes.Byte.mc
 import com.syuto.bytes.module.ModuleManager
 import com.syuto.bytes.module.api.Category
@@ -48,7 +49,7 @@ class CategoryComponent(
         DrawUtil.translate(
 //            (mc.window.scaledWidth / 2.0) * (1.0 - openAnimation.get()),
             0,
-            (mc.window.scaledHeight) * (1.0 - openAnimation.get())
+            (mc.window.guiScaledHeight) * (1.0 - openAnimation.get())
         )
 //        DrawUtil.scale(openAnimation.get()) // max needed to prevent back out animation from going negative
         DrawUtil.scissor(x, y, width, height)

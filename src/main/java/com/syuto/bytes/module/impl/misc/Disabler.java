@@ -11,16 +11,13 @@ import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.module.impl.movement.Speed;
 import com.syuto.bytes.setting.impl.ModeSetting;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.common.CommonPongC2SPacket;
-import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.network.packet.s2c.play.EntityPositionS2CPacket;
-import net.minecraft.network.packet.s2c.play.EntityPositionSyncS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerPositionLookS2CPacket;
-
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 import java.util.ArrayList;
 
+@Deprecated
 public class Disabler extends Module {
     public ModeSetting modes = new ModeSetting("mode",this,"Vulcan", "CubeCraft");
     public Disabler() {
@@ -52,7 +49,12 @@ public class Disabler extends Module {
 
     @EventHandler
     public void onPacketSent(PacketSentEvent event) {
-        if (modes.getValue().equals("Vulcan")) {
+        Packet<?> packet = event.getPacket();
+
+        if (packet instanceof ServerboundInteractPacket || packet instanceof ServerboundUseItemPacket || packet instanceof ServerboundPlayerActionPacket) {
+            ChatUtils.print(event.getPacket());
+        }
+        /*if (modes.getValue().equals("Vulcan")) {
 
             if (event.getPacket() instanceof CommonPongC2SPacket) {
                 if (accept) {
@@ -79,7 +81,7 @@ public class Disabler extends Module {
                     event.setCanceled(true);
                 }
             }
-        }
+        }*/
     }
 
 
@@ -111,12 +113,12 @@ public class Disabler extends Module {
 
 
     private void clear() {
-        SendPacketMixinAccessor silent = (SendPacketMixinAccessor) mc.getNetworkHandler();
+        SendPacketMixinAccessor silent = (SendPacketMixinAccessor) mc.getConnection();
 
         synchronized (packetList) {
             if (!packetList.isEmpty()) {
                 for (Packet<?> packet : packetList) {
-                    silent.getConnection().send(packet);
+                    silent.byte$getConnection().send(packet);
                 }
                 packetList.clear();
                 ChatUtils.print("Clear");

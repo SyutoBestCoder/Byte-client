@@ -2,7 +2,7 @@ package com.syuto.bytes.eventbus.impl;
 
 import com.syuto.bytes.eventbus.Event;
 import lombok.Setter;
-import net.minecraft.network.packet.Packet;
+import net.minecraft.network.protocol.Packet;
 
 public class PacketSentEvent implements Event {
     private final Packet<?> packet;

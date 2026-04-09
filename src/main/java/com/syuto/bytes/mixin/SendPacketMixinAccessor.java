@@ -1,15 +1,14 @@
 package com.syuto.bytes.mixin;
 
-import net.minecraft.client.network.ClientCommonNetworkHandler;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.packet.Packet;
+import net.minecraft.client.multiplayer.ClientCommonPacketListenerImpl;
+import net.minecraft.network.Connection;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(ClientCommonNetworkHandler.class)
+@Mixin(ClientCommonPacketListenerImpl.class)
 public interface SendPacketMixinAccessor {
 
-    @Accessor
-    ClientConnection getConnection();
+    @Accessor("connection")
+    Connection byte$getConnection();
 }

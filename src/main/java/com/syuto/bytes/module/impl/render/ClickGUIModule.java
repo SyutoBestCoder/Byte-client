@@ -23,7 +23,7 @@ public class ClickGUIModule extends Module {
 
     @Override
     protected void onDisable() {
-        if (mc.currentScreen instanceof DropdownClickGUI) {
+        if (mc.screen instanceof DropdownClickGUI) {
             mc.setScreen(null);
         }
     }

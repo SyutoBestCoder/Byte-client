@@ -4,7 +4,7 @@ import com.syuto.bytes.commands.Command;
 import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.ModuleManager;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
 
 public class Toggle extends Command {
     public Toggle() {
@@ -18,9 +18,9 @@ public class Toggle extends Command {
             Module m = ModuleManager.getModule(modName);
             if (m != null) {
                 m.toggle();
-                ChatUtils.print((m.isEnabled() ? Formatting.GREEN + "Enabled " : Formatting.RED + "Disabled ") + m.getName());
+                ChatUtils.print((m.isEnabled() ? ChatFormatting.GREEN + "Enabled " : ChatFormatting.RED + "Disabled ") + m.getName());
             } else {
-                ChatUtils.print("Module name " +  Formatting.RED  + modName + Formatting.RED + " is invalid");
+                ChatUtils.print("Module name " +  ChatFormatting.RED  + modName + ChatFormatting.RED + " is invalid");
             }
         } else {
             ChatUtils.print("§bCorrect usage:§7 " + getSyntax());

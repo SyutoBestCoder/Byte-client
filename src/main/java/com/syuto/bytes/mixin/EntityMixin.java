@@ -2,11 +2,11 @@ package com.syuto.bytes.mixin;
 
 
 import com.syuto.bytes.module.ModuleManager;
-import com.syuto.bytes.module.impl.combat.Velocity;
-import com.syuto.bytes.module.impl.render.RenderingTest;
+import com.syuto.bytes.module.impl.movement.MovementFix;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,37 +20,24 @@ import static com.syuto.bytes.Byte.mc;
 public abstract class EntityMixin {
 
 
-    @Shadow public abstract float getYaw();
+    @Shadow public abstract float getYRot();
 
-    @Shadow public abstract void setVelocity(Vec3d velocity);
+    @Shadow public abstract void setDeltaMovement(Vec3 velocity);
 
-    @Shadow public abstract Vec3d getVelocity();
-
-    @ModifyArgs(method = "pushAwayFrom(Lnet/minecraft/entity/Entity;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;addVelocity(DDD)V"))
-    private void onPushAwayFrom(Args args, Entity entity) {
-        Velocity test = ModuleManager.getModule(Velocity.class);
-        if (test != null && test.isEnabled()) {
-            if ((Object) this == mc.player) {
-                args.set(0, (double) args.get(0) * 0);
-                args.set(2, (double) args.get(2) * 0);
-            }
-        }
-    }
-
-
+    @Shadow public abstract Vec3 getDeltaMovement();
 
     @ModifyArgs(
-            method = "updateVelocity",
+            method = "moveRelative",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/entity/Entity;movementInputToVelocity(Lnet/minecraft/util/math/Vec3d;FF)Lnet/minecraft/util/math/Vec3d;"
+                    target = "Lnet/minecraft/world/entity/Entity;getInputVector(Lnet/minecraft/world/phys/Vec3;FF)Lnet/minecraft/world/phys/Vec3;"
             )
     )
-    private void mf(Args args) { //movefix this doesnt work in air for some reaosn
-        RenderingTest test = ModuleManager.getModule(RenderingTest.class);
+    private void mf(Args args) {
+        MovementFix test = ModuleManager.getModule(MovementFix.class);
         if (test != null && test.isEnabled()) {
             float customYaw = RotationUtils.getRotationYaw();
-            //args.set(2, customYaw);
+            // args.set(2, customYaw);
         }
     }
 }

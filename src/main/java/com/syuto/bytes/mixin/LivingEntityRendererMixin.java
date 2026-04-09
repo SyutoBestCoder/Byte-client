@@ -1,16 +1,13 @@
 package com.syuto.bytes.mixin;
 
+import com.syuto.bytes.Byte;
+import com.syuto.bytes.eventbus.impl.RenderEntityEvent;
 import com.syuto.bytes.utils.impl.rotation.MixinUtils;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
-import net.minecraft.client.render.entity.EntityRenderer;
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.LivingEntityRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRendererContext;
-import net.minecraft.client.render.entity.model.EntityModel;
-import net.minecraft.client.render.entity.state.LivingEntityRenderState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -28,18 +25,22 @@ public abstract class LivingEntityRendererMixin<
 
 
     @Inject(
-            method = "updateRenderState(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/client/render/entity/state/LivingEntityRenderState;F)V",
+            method = "extractRenderState(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;F)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/entity/LivingEntity;getCustomName()Lnet/minecraft/text/Text;",
-                    shift = At.Shift.BEFORE
+                    target = "Lnet/minecraft/client/renderer/entity/LivingEntityRenderer;isEntityUpsideDown(Lnet/minecraft/world/entity/LivingEntity;)Z",
+                    shift = At.Shift.AFTER
             )
     )
     public void updateRenderState(T livingEntity, S livingEntityRenderState, float f, CallbackInfo ci) {
         if (livingEntity == mc.player) {
+            RenderEntityEvent event = new RenderEntityEvent();
+
+            Byte.INSTANCE.eventBus.post(event);
+
 
             if (RotationUtils.yawChanged) {
-                float g = MathHelper.lerpAngleDegrees(
+                float g = Mth.rotLerp(
                         f,
                         RotationUtils.getLastRotationYaw(),
                         RotationUtils.getRotationYaw()
@@ -49,7 +50,7 @@ public abstract class LivingEntityRendererMixin<
 
             }
 
-            livingEntityRenderState.pitch = MixinUtils.getLerpedPitch(f, livingEntity);
+            livingEntityRenderState.xRot = MixinUtils.getLerpedPitch(f, livingEntity);
         }
     }
 

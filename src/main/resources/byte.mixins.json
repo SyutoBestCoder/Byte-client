@@ -6,28 +6,28 @@
     "defaultRequire": 1
   },
   "client": [
-    "AbstractClientPlayerMixin",
     "ChatMixin",
+    "ClientPacketListenerMixin",
     "ClientPlayerEntityMixin",
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerNetworkHandlerMixin",
+    "ConnectionAccessor",
     "DownloaderMixin",
     "EntityMixin",
-    "ItemRendererMixin",
     "KeyboardInputMixin",
     "KeyboardMixin",
+    "KeyMappingAccessor",
+    "KeyMappingMixin",
     "LivingEntityRendererMixin",
-    "MinecraftClientMixin",
     "MinecraftMixin",
+    "MouseMixin",
     "PacketReceivedMixin",
-    "PlayerEntityMixin",
-    "PlayerEntityRendererMixin",
     "RenderMixin",
     "RenderWorldMixin",
     "SendPacketMixin",
-    "SendPacketMixinAccessor",
-    "SoundManagerMixin",
-    "TextRendererMixin",
-    "TitleScreenMixin"
+    "SendPacketMixinAccessor"
+  ],
+  "mixins": [
+    "LivingEntityMixin"
   ]
 }

@@ -6,19 +6,16 @@ import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.setting.impl.NumberSetting;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
-import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.client.gui.screen.ingame.ShulkerBoxScreen;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.GenericContainerScreenHandler;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ShulkerBoxScreenHandler;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.screen.slot.SlotActionType;
-
 import java.util.Arrays;
 import java.util.List;
+import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.minecraft.client.gui.screens.inventory.ShulkerBoxScreen;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ShulkerBoxMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 public class ChestStealer extends Module {
     public NumberSetting stealDelay = new NumberSetting("Delay",this,200,0,500, 25);
@@ -32,15 +29,15 @@ public class ChestStealer extends Module {
 
     @EventHandler
     void onPreUpdate(PreUpdateEvent event) {
-        if (mc.currentScreen instanceof GenericContainerScreen e) {
+        if (mc.screen instanceof ContainerScreen e) {
             String title = e.getTitle().getString();
-            GenericContainerScreenHandler handler = e.getScreenHandler();
+            ChestMenu handler = e.getMenu();
             if (title.contains("Large Chest") || title.contains("Chest") || title.contains("Barrel")) {
-                steal(handler.getInventory().size(), handler);
+                steal(handler.getContainer().getContainerSize(), handler);
             }
-        } else if (mc.currentScreen instanceof ShulkerBoxScreen a) {
+        } else if (mc.screen instanceof ShulkerBoxScreen a) {
             String title = a.getTitle().getString();
-            ShulkerBoxScreenHandler handle = a.getScreenHandler();
+            ShulkerBoxMenu handle = a.getMenu();
             if (title.contains("Shulker Box")) {
                 steal(27, handle);
             }
@@ -48,14 +45,14 @@ public class ChestStealer extends Module {
     }
 
 
-    private void steal(int size, ScreenHandler handler) {
+    private void steal(int size, AbstractContainerMenu handler) {
         for (int i = 0; i < size; i++) {
             Slot slot = handler.slots.get(i);
-            ItemStack stack = slot.getStack();
+            ItemStack stack = slot.getItem();
             if (!stack.isEmpty()) {
                 if (System.currentTimeMillis() - this.lastTime >= delay) {
                     this.lastTime = System.currentTimeMillis();
-                    mc.interactionManager.clickSlot(handler.syncId, slot.id, 1, SlotActionType.QUICK_MOVE, mc.player);
+                    mc.gameMode.handleInventoryMouseClick(handler.containerId, slot.index, 1, ClickType.QUICK_MOVE, mc.player);
                     updateDelay();
                 }
             }

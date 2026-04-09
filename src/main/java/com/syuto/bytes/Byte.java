@@ -5,15 +5,9 @@ import com.syuto.bytes.eventbus.EventBus;
 import com.syuto.bytes.eventbus.Handlers;
 import com.syuto.bytes.module.ModuleManager;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 public class Byte implements ModInitializer {
 
@@ -23,21 +17,15 @@ public class Byte implements ModInitializer {
 
 	public static Byte INSTANCE;
 	public EventBus eventBus;
-	public static MinecraftClient mc = MinecraftClient.getInstance();
+	public static Minecraft mc = Minecraft.getInstance();
 	public CommandManager commandManager;
 	public Handlers handlers;
-    public final static String CHATGPT_API = "";
-
-	public static final Identifier FEM_SOUND_ID = Identifier.of("byte", "music.fem");
-	public static final SoundEvent FEM_SOUND_EVENT = SoundEvent.of(FEM_SOUND_ID);
-
 
 	public Byte() {
 		eventBus = new EventBus();
 		commandManager = new CommandManager();
 		handlers = new Handlers();
 
-		Registry.register(Registries.SOUND_EVENT, FEM_SOUND_ID, FEM_SOUND_EVENT);
 		registerEvents();
 	}
 
@@ -45,7 +33,6 @@ public class Byte implements ModInitializer {
 	public void onInitialize() {
         final long time = System.currentTimeMillis();
 		ModuleManager.registerModules();
-        //start the http server after modules have been initialized
 
         LOGGER.info("Initialized {} in {}ms.", NAME, System.currentTimeMillis() - time);
     }

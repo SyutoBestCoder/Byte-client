@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-	id "fabric-loom" version "1.9-SNAPSHOT"
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
 	id "org.jetbrains.kotlin.jvm" version "2.1.0"
 	id "com.gradleup.shadow" version "8.3.5" // Use com.gradleup.shadow instead of com.github.johnrengelman.shadow
 }
@@ -23,11 +23,12 @@ repositories {
 }
 
 dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
 	modImplementation("net.fabricmc:fabric-language-kotlin:${project.kotlin_loader_version}")
 	compileOnly("org.projectlombok:lombok:1.18.36")
 	annotationProcessor("org.projectlombok:lombok:1.18.36")
@@ -59,9 +60,6 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.withType(KotlinCompile).configureEach {
-	kotlinOptions {
-		jvmTarget = 21
-	}
 }
 
 java {

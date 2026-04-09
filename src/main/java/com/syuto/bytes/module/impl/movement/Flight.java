@@ -1,7 +1,9 @@
 package com.syuto.bytes.module.impl.movement;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.syuto.bytes.eventbus.EventHandler;
 import com.syuto.bytes.eventbus.impl.PacketReceivedEvent;
+import com.syuto.bytes.eventbus.impl.PostMotionEvent;
 import com.syuto.bytes.eventbus.impl.PreMotionEvent;
 import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.api.Category;
@@ -12,14 +14,15 @@ import com.syuto.bytes.utils.impl.player.MovementUtil;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import com.syuto.bytes.utils.impl.rotation.RotationUtils;
 import io.netty.util.internal.MathUtil;
-import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
-import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
+import net.minecraft.client.KeyMapping;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+import net.minecraft.world.phys.Vec3;
+
+@Deprecated
 public class Flight extends Module {
 
     public ModeSetting modes = new ModeSetting("Mode",this,"Vanilla", "Spoof", "Damage");
@@ -60,64 +63,41 @@ public class Flight extends Module {
 
     @EventHandler
     void onPreMotion(PreMotionEvent event) {
-        ticks = !mc.player.isOnGround() ? ticks + 1 : 0;
+        ticks++;
 
+        double predictedY = MovementUtil.predictedMotion(event.posY, ticks);
         double y;
 
-        if (mc.options.jumpKey.isPressed()) {
+        if (mc.options.keyJump.isDown()) {
             y = speed.getValue().doubleValue();
-        } else if (mc.options.sneakKey.isPressed()) {
+        } else if (mc.options.keyShift.isDown()) {
             y = -speed.getValue().doubleValue();
         } else {
             y = 0;
         }
 
-        Vec3d motion = mc.player.getVelocity();
+        Vec3 motion = mc.player.getDeltaMovement();
 
         switch(modes.getValue()) {
             case "Vanilla" -> {
-                mc.player.setVelocity(motion.x, y, motion.z);
+                mc.player.setDeltaMovement(motion.x, y, motion.z);
 
                 if (MovementUtil.isMoving()) {
                     MovementUtil.setSpeed(speed.getValue().doubleValue());
                 } else {
-                    mc.player.setVelocity(0, y, 0);
+                    mc.player.setDeltaMovement(0, y, 0);
                 }
             }
+
 
             case "Spoof" -> {
-                if (!damage) {
-                    Vec3d pos = mc.player.getPos();
-
-                    mc.player.setPosition(pos.x, pos.y + 5, pos.z);
-                    damage = true;
-                }
-
-            }
-
-            case "Damage" -> {
-                if (!this.damage) {
-                    mc.player.setVelocity(0, motion.y, 0);
-                    if (jumps < 4) {
-                        event.onGround = false;
-                        if (ticks < jumpValues.length) {
-                            event.posY += jumpValues[ticks];
-                            ticks++;
-                        } else {
-                            jumps++;
-                            ticks = 0;
-                        }
-                        if (jumps == 3 && ticks >= 2) {
-                            event.onGround = true;
-                        }
-                    }
-                } else {
-                    mc.player.setVelocity(motion.x, y, motion.z);
-
-                    if (MovementUtil.isMoving()) {
-                        MovementUtil.setSpeed(speed.getValue().doubleValue());
+                final InputConstants.Key attackKey = InputConstants.getKey("key.mouse.left");
+                final InputConstants.Key useKey = InputConstants.getKey("key.mouse.right");
+                if (mc.options.keyUse.isDown()) {
+                    if (ticks % 2 == 0) {
+                        KeyMapping.click(attackKey);
                     } else {
-                        mc.player.setVelocity(0, y, 0);
+                        KeyMapping.click(useKey);
                     }
                 }
             }
@@ -126,11 +106,21 @@ public class Flight extends Module {
 
 
     @EventHandler
+    public void onPostMotion(PostMotionEvent event) {
+        switch (modes.getValue()) {
+            case "Spoof" -> {
+            }
+        }
+
+    }
+
+    @EventHandler
     public void onPacketReceived(PacketReceivedEvent event) {
-        if (event.getPacket() instanceof EntityVelocityUpdateS2CPacket s12) {
-            if (s12.getEntityId() == mc.player.getId() && modes.getValue().equals("Damage")) {
+        if (event.getPacket() instanceof ClientboundSetEntityMotionPacket s12) {
+            if (s12.getId() == mc.player.getId() && modes.getValue().equals("Damage")) {
                 this.damage = true;
             }
         }
     }
+
 }

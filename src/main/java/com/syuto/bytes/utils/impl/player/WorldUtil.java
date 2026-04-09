@@ -2,17 +2,15 @@ package com.syuto.bytes.utils.impl.player;
 
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,17 +20,17 @@ import static com.syuto.bytes.Byte.mc;
 public class WorldUtil {
 
     public static BlockPos findBlocks(BlockPos pos, int range) {
-        Optional<BlockPos> block = BlockPos.findClosest(
-                pos.down(), range, range,
-                cock -> !mc.world.getBlockState(cock).isAir()
+        Optional<BlockPos> block = BlockPos.findClosestMatch(
+                pos, range, range,
+                cock -> mc.level.getBlockState(cock).getBlock().equals(Blocks.NOTE_BLOCK)
         );
         return block.orElse(null);
     }
 
     public static BlockPos findBlocksAround(BlockPos pos, int range) {
-        Optional<BlockPos> block = BlockPos.findClosest(
+        Optional<BlockPos> block = BlockPos.findClosestMatch(
                 pos, range, range,
-                cock -> mc.world.getBlockState(cock).getBlock() instanceof BedBlock
+                cock -> mc.level.getBlockState(cock).getBlock() instanceof BedBlock
         );
         return block.orElse(null);
     }
@@ -44,7 +42,7 @@ public class WorldUtil {
             for (int y = centerPos.getY() - range; y <= centerPos.getY() + range; y++) {
                 for (int z = centerPos.getZ() - range; z <= centerPos.getZ() + range; z++) {
                     BlockPos currentPos = new BlockPos(x, y, z);
-                    Block block = mc.world.getBlockState(currentPos).getBlock();
+                    Block block = mc.level.getBlockState(currentPos).getBlock();
                     //we dont talk about this lol
                     if (
                             block == Blocks.DIAMOND_ORE ||
@@ -78,10 +76,11 @@ public class WorldUtil {
         Direction closestDirection = null;
 
         for (Direction dir : Direction.values()) {
-            BlockPos offsetPos = pos.offset(dir);
+            BlockPos offsetPos = pos.relative(dir);
 
-            Vec3d faceCenter = offsetPos.toCenterPos();
-            double distance = mc.player.getPos().squaredDistanceTo(faceCenter);
+            Vec3 faceCenter = offsetPos.getCenter();
+            Vec3 po = new Vec3(mc.player.getX(), mc.player.getY(), mc.player.getZ());
+            double distance = po.distanceToSqr(faceCenter);
 
             if (distance <= closestDistance) {
                 closestDistance = distance;
@@ -94,30 +93,30 @@ public class WorldUtil {
 
 
     public static boolean canPlace(BlockPos position) {
-        BlockState state =  mc.world.getBlockState(position);
-        return state != null && state.isReplaceable();
+        BlockState state =  mc.level.getBlockState(position);
+        return state != null && state.canBeReplaced();
     }
 
 
 
     public static boolean canBePlacedOn(BlockPos blockPos) {
-        if (blockPos == null || mc.player == null || mc.world == null) return false;
+        if (blockPos == null || mc.player == null || mc.level == null) return false;
 
-        Box blockBox = new Box(blockPos);
+        AABB blockBox = new AABB(blockPos);
 
         if (mc.player.getBoundingBox().intersects(blockBox)) {
             return false;
         }
 
-        BlockState state = mc.world.getBlockState(blockPos);
-        return state != null && state.isSolidBlock(mc.world, blockPos) && !state.isAir();
+        BlockState state = mc.level.getBlockState(blockPos);
+        return state != null && state.isRedstoneConductor(mc.level, blockPos) && !state.isAir();
     }
 
 
 
 
     public static boolean isOnTeam(Entity ent) {
-        return ent.isTeammate(mc.player);
+        return ent.isAlliedTo(mc.player);
     }
 
 }

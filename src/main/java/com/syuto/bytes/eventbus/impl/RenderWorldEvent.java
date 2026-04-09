@@ -1,14 +1,14 @@
 package com.syuto.bytes.eventbus.impl;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.syuto.bytes.eventbus.Event;
-import net.minecraft.client.util.math.MatrixStack;
 
 public class RenderWorldEvent implements Event {
 
     public float partialTicks;
-    public MatrixStack matrixStack;
+    public PoseStack matrixStack;
 
-    public RenderWorldEvent(float partialTicks, MatrixStack matrixStack) {
+    public RenderWorldEvent(float partialTicks, PoseStack matrixStack) {
         this.partialTicks = partialTicks;
         this.matrixStack = matrixStack;
     }

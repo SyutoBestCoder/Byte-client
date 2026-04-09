@@ -4,56 +4,109 @@ import com.syuto.bytes.eventbus.EventHandler;
 import com.syuto.bytes.eventbus.impl.PreUpdateEvent;
 import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.api.Category;
-import com.syuto.bytes.utils.impl.client.ChatUtils;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.screen.slot.SlotActionType;
+import com.syuto.bytes.setting.impl.NumberSetting;
+
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public class AutoTotem extends Module {
+
     public AutoTotem() {
-        super("AutoTotem", "AutoTotemer", Category.COMBAT);
+        super("AutoTotem", "Opens inventory and equips totems", Category.COMBAT);
     }
 
+    public NumberSetting delay =
+            new NumberSetting("Delay", this, 200, 0, 500, 25);
+
+    private long lastSwap;
+    private boolean waitingForInventory = false;
+    private int targetSlot = -1;
+
     @EventHandler
-    public void onPreUpdate(PreUpdateEvent event) {
-        ItemStack offhand = mc.player.getOffHandStack();
-        if (!offhand.isEmpty() && offhand.getItem() == Items.TOTEM_OF_UNDYING) return;
+    void onPreUpdate(PreUpdateEvent event) {
 
-        int foundInvIndex = -1;
+        if (mc.player == null || mc.gameMode == null)
+            return;
 
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getStack(i);
-            if (!stack.isEmpty() && stack.getItem() == Items.TOTEM_OF_UNDYING) {
-                foundInvIndex = i;
-                break;
-            }
-        }
+        ItemStack offhand = mc.player.getOffhandItem();
 
-        if (foundInvIndex == -1) {
-            for (int i = 9; i < mc.player.getInventory().size(); i++) {
-                ItemStack stack = mc.player.getInventory().getStack(i);
-                if (!stack.isEmpty() && stack.getItem() == Items.TOTEM_OF_UNDYING) {
-                    foundInvIndex = i;
-                    break;
-                }
-            }
-        }
+        if (offhand.getItem() == Items.TOTEM_OF_UNDYING)
+            return;
 
-        if (foundInvIndex == -1) {
-            //ChatUtils.print("No Totem in inventory");
+        if (System.currentTimeMillis() - lastSwap < delay.getValue().longValue())
+            return;
+
+        if (!(mc.screen instanceof InventoryScreen) && !waitingForInventory) {
+
+            targetSlot = findTotemSlot();
+
+            if (targetSlot == -1)
+                return;
+
+            mc.setScreen(new InventoryScreen(mc.player));
+
+            waitingForInventory = true;
             return;
         }
 
-        int syncId = mc.player.currentScreenHandler.syncId;
-        int offhandSlot = 45;
+        if (mc.screen instanceof InventoryScreen && waitingForInventory) {
 
-        int slotId = (foundInvIndex < 9) ? 36 + foundInvIndex : foundInvIndex;
+            moveToOffhand(targetSlot);
+            mc.player.closeContainer();
 
-        mc.interactionManager.clickSlot(syncId, slotId, 0, SlotActionType.PICKUP, mc.player);
-        mc.interactionManager.clickSlot(syncId, offhandSlot, 0, SlotActionType.PICKUP, mc.player);
-        mc.interactionManager.clickSlot(syncId, slotId, 0, SlotActionType.PICKUP, mc.player);
-
-        //ChatUtils.print("Moved Totem from slot " + foundInvIndex + " (window slot " + slotId + ") to offhand");
+            waitingForInventory = false;
+            lastSwap = System.currentTimeMillis();
+        }
     }
 
+    private int findTotemSlot() {
+
+        for (int i = 0; i < 36; i++) {
+
+            ItemStack stack =
+                    mc.player.getInventory().getItem(i);
+
+            if (stack.getItem() == Items.TOTEM_OF_UNDYING) {
+
+                // Convert hotbar
+                if (i < 9)
+                    i += 36;
+
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private void moveToOffhand(int slot) {
+
+        int offhandSlot = 45;
+
+        mc.gameMode.handleInventoryMouseClick(
+                mc.player.containerMenu.containerId,
+                slot,
+                0,
+                ClickType.PICKUP,
+                mc.player
+        );
+
+        mc.gameMode.handleInventoryMouseClick(
+                mc.player.containerMenu.containerId,
+                offhandSlot,
+                0,
+                ClickType.PICKUP,
+                mc.player
+        );
+
+        mc.gameMode.handleInventoryMouseClick(
+                mc.player.containerMenu.containerId,
+                slot,
+                0,
+                ClickType.PICKUP,
+                mc.player
+        );
+    }
 }

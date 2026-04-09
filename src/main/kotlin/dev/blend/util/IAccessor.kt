@@ -1,7 +1,7 @@
 package dev.blend.util
 
-import net.minecraft.client.MinecraftClient
+import net.minecraft.client.Minecraft
 
 interface IAccessor {
-    val mc get() = MinecraftClient.getInstance()!!
+    val mc get() = Minecraft.getInstance()!!
 }

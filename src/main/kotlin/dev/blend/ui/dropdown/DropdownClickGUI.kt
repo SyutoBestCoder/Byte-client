@@ -1,17 +1,18 @@
 package dev.blend.ui.dropdown
 
-import com.syuto.bytes.Byte.mc
 import com.syuto.bytes.module.ModuleManager
 import com.syuto.bytes.module.api.Category
 import com.syuto.bytes.module.impl.render.ClickGUIModule
 import dev.blend.ui.dropdown.components.CategoryComponent
 import dev.blend.util.animations.BackOutAnimation
 import dev.blend.util.render.DrawUtil
-import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.gui.screen.Screen
-import net.minecraft.text.Text
+import net.minecraft.client.gui.GuiGraphics
+import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.input.KeyEvent
+import net.minecraft.client.input.MouseButtonEvent
+import net.minecraft.network.chat.Component
 
-object DropdownClickGUI: Screen(Text.of("Dropdown Click GUI")) {
+object DropdownClickGUI: Screen(Component.literal("Dropdown Click GUI")) {
 
     private val openAnimation = BackOutAnimation()
     val components = mutableListOf<CategoryComponent>()
@@ -37,8 +38,9 @@ object DropdownClickGUI: Screen(Text.of("Dropdown Click GUI")) {
         }
     }
 
-    override fun render(context: DrawContext?, mouseX: Int, mouseY: Int, delta: Float) {
-        context?.matrices?.push()
+    override fun render(context: GuiGraphics, mouseX: Int, mouseY: Int, delta: Float) {
+
+        context?.pose()?.pushMatrix()
         DrawUtil.begin()
 //        DrawUtil.save()
 //        DrawUtil.translate(
@@ -49,10 +51,11 @@ object DropdownClickGUI: Screen(Text.of("Dropdown Click GUI")) {
         components.forEach {
             it.render(mouseX, mouseY)
         }
+
 //        DrawUtil.resetTranslate()
 //        DrawUtil.restore()
         DrawUtil.end()
-        context?.matrices?.pop()
+        context?.pose()?.popMatrix()
         openAnimation.animate(
             if (requestsClose) {
                 0.0
@@ -67,36 +70,37 @@ object DropdownClickGUI: Screen(Text.of("Dropdown Click GUI")) {
         }
     }
 
-    override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
+    override fun mouseClicked(click: MouseButtonEvent, doubled: Boolean): Boolean {
         components.forEach {
-            if (it.isOver(mouseX, mouseY)) {
-                if (it.click(mouseX, mouseY, button)) {
+            if (it.isOver(click.x(), click.y())) {
+                if (it.click(click.x(), click.y(), click.button())) {
                     return true
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button)
+        return super.mouseClicked(click, doubled)
     }
 
-    override fun mouseReleased(mouseX: Double, mouseY: Double, button: Int): Boolean {
+    override fun mouseReleased(click: MouseButtonEvent): Boolean {
         components.forEach {
-            if (it.release(mouseX, mouseY, button)) {
+            if (it.release(click.x, click.y, click.button())) {
                 return true
             }
         }
-        return super.mouseReleased(mouseX, mouseY, button)
+        return super.mouseReleased(click)
     }
 
-    override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
+    override fun keyPressed(input: KeyEvent): Boolean {
         components.forEach {
-            if (it.key(keyCode, scanCode, modifiers)) {
+            if (it.key(input.key(), input.scancode(), input.modifiers())) {
                 return true
             }
         }
-        return super.keyPressed(keyCode, scanCode, modifiers)
+        return super.keyPressed(input)
     }
 
-    override fun close() {
+
+    override fun onClose() {
         components.forEach{
             it.close()
         }
@@ -104,12 +108,20 @@ object DropdownClickGUI: Screen(Text.of("Dropdown Click GUI")) {
         requestsClose = true
     }
 
-    override fun shouldPause(): Boolean {
+    override fun isPauseScreen(): Boolean {
         return false
     }
 
     override fun shouldCloseOnEsc(): Boolean {
         return true
+    }
+
+    override fun renderBackground(guiGraphics: GuiGraphics, mouseY: Int, j: Int, delta: Float) {
+        // do nothing — suppresses the blur/dim overlay
+    }
+
+    override fun renderBlurredBackground(guiGraphics: GuiGraphics) {
+        // suppress blur shader
     }
 
 }

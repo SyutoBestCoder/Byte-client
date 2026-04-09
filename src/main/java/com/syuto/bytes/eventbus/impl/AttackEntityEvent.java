@@ -3,7 +3,7 @@ package com.syuto.bytes.eventbus.impl;
 import com.syuto.bytes.eventbus.Event;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 public class AttackEntityEvent implements Event {

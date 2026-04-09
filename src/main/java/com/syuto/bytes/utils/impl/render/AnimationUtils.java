@@ -1,22 +1,11 @@
 package com.syuto.bytes.utils.impl.render;
 
-import com.syuto.bytes.module.ModuleManager;
-import com.syuto.bytes.module.impl.render.Animations;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Arm;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RotationAxis;
-import net.minecraft.util.math.RotationCalculator;
-import net.minecraft.util.math.RotationPropertyHelper;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-import org.lwjgl.opengl.GL11;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 
-import static com.syuto.bytes.Byte.mc;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 public class AnimationUtils {
 
@@ -30,33 +19,30 @@ public class AnimationUtils {
 
     public static float height = -0.1f;
 
-    public static void animate(MatrixStack matrices, float swingProgress, float f) {
-        float sine = (float) Math.sin(MathHelper.sqrt(swingProgress) * Math.PI) ;
+    public static void animate(PoseStack matrices, float swingProgress, float f) {
+        float sine = (float) Math.sin(Mth.sqrt(swingProgress) * Math.PI) ;
 
-        Animations animation = ModuleManager.getModule(Animations.class);
-        assert animation != null;
-
-        switch(animation.mode.value) {
+        /*switch() {
             case "Exhibition" -> {
                 matrices.translate(0.1, 0, -0.1);
-                matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-sine * 50));
-                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-sine * 30));
+                matrices.mulPose(Axis.XP.rotationDegrees(-sine * 50));
+                matrices.mulPose(Axis.YP.rotationDegrees(-sine * 30));
             }
 
             case "Vanilla" -> {
                 matrices.translate(0.1, 0,-0.1);
-                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(45.0f + f * -20.0f));
-                matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(sine * -20.0f));
-                matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(sine * -80.0f));
-                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(-45.0f));
+                matrices.mulPose(Axis.YP.rotationDegrees(45.0f + f * -20.0f));
+                matrices.mulPose(Axis.ZP.rotationDegrees(sine * -20.0f));
+                matrices.mulPose(Axis.XP.rotationDegrees(sine * -80.0f));
+                matrices.mulPose(Axis.YP.rotationDegrees(-45.0f));
             }
 
             case "Spin" -> {
                 float spin = -(System.currentTimeMillis() / 2 % 360);
                 matrices.translate(-0.1, 0,-0.2);
-                matrices.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(spin));
+                matrices.mulPose(Axis.ZP.rotationDegrees(spin));
             }
-        }
+        }*/
 
     }
 
