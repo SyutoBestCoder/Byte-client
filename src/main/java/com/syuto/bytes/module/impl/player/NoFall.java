@@ -5,45 +5,42 @@ import com.syuto.bytes.eventbus.impl.PreMotionEvent;
 import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.setting.impl.ModeSetting;
-import com.syuto.bytes.utils.impl.client.ChatUtils;
-import com.syuto.bytes.utils.impl.player.MovementUtil;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
 @Deprecated
 public class NoFall extends Module {
 
-    public ModeSetting modes = new ModeSetting("mode",this,"Packet", "Spoof", "NoGround", "Grim");
+    public ModeSetting mode = new ModeSetting(
+            "mode",this,
+            "Universal",
+            "Spoof", "Old Grim"
+    );
 
-    private boolean shouldNoFall = false, jumpNextTick = false;
+    private boolean shouldNoFall = false;
+    private boolean jumpNextTick = false;
 
     public NoFall() {
         super("NoFall", "Stops fall damage", Category.PLAYER);
-        setSuffix(() -> modes.getValue());
+        setSuffix(() -> mode.getValue());
     }
 
     @EventHandler
     public void onPreMotion(PreMotionEvent event) {
         boolean ground = mc.player.onGround();
 
-        switch (modes.getValue()) {
-            case "Packet" -> {
-                if (!ground) {
-                    double x = mc.player.getX();
-                    double y = mc.player.getY();
-                    double z = mc.player.getZ();
-                    mc.getConnection().send(new ServerboundMovePlayerPacket.Pos(x, y, z, true, mc.player.horizontalCollision));
+        switch (mode.getValue()) {
+
+            case "Universal" -> {
+                if(PlayerUtil.getFallDistance() < 4) {
+                    event.onGround = true;
                 }
             }
+
             case "Spoof" -> {
                 event.onGround = true;
             }
 
-            case "NoGround" -> {
-                event.onGround = false;
-            }
-
-            case "Grim" -> {
+            case "Old Grim" -> {
                 //ChatUtils.print("nofall " + PlayerUtil.getFallDistance() );
                 if (PlayerUtil.getFallDistance() == 10) {
                     shouldNoFall = true;
