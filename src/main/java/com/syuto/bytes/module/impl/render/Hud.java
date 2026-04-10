@@ -8,6 +8,7 @@ import com.syuto.bytes.module.Module;
 import com.syuto.bytes.module.ModuleManager;
 import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.module.impl.combat.AttributeSwap;
+import com.syuto.bytes.setting.impl.BooleanSetting;
 import com.syuto.bytes.setting.impl.ColorSetting;
 import com.syuto.bytes.setting.impl.NumberSetting;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
@@ -33,6 +34,8 @@ import static com.syuto.bytes.Byte.mc;
 public class Hud extends Module {
 
     public final ColorSetting primary = new ColorSetting("Color", this, new Color(255, 0, 255));
+    public final BooleanSetting watermark = new BooleanSetting("Watermark", this, false);
+
     private final HashMap<String, Double> xOffsets = new HashMap<>();
     private final HashMap<String, Double> heights = new HashMap<>();
     public static HashMap<String, String> modules = new HashMap<>();
@@ -57,6 +60,7 @@ public class Hud extends Module {
                 .toList();
 
         double yPosition = 1;
+        DrawUtil.begin();
 
         for (Module mod : allModules) {
             String moduleName = mod.getName();
@@ -66,13 +70,11 @@ public class Hud extends Module {
             double suffixWidth = suffix.isEmpty() ? 0 : DrawUtil.getStringWidth("" + suffix, 12, ResourceManager.FontResources.regular);
             double totalWidth = nameWidth + suffixWidth;
 
-            // x: slide in from right (positive = on screen, negative = off screen)
             double xTarget = mod.isEnabled() ? 0 : -(totalWidth + 10);
             double xCurrent = xOffsets.getOrDefault(moduleName, (totalWidth + 10)); // always start off-screen if unseen
             xCurrent -= (xTarget + xCurrent) * 0.2;
             xOffsets.put(moduleName, xCurrent);
 
-            // height: animate from 0 to 13 for smooth y push
             double heightTarget = mod.isEnabled() ? 13 : 0;
             double heightCurrent = heights.getOrDefault(moduleName, 0.0); // always start collapsed
             heightCurrent += (heightTarget - heightCurrent) * 0.2;
@@ -80,22 +82,29 @@ public class Hud extends Module {
 
             double xPosition = screenWidth - 2 + xCurrent;
 
-            // fade alpha based on x progress
             float alpha = (float) Math.min(1.0, (xCurrent + totalWidth + 10) / (totalWidth + 10));
             Color moduleColor = applyAlpha(primary.getValue(), alpha);
             Color suffixColor = applyAlpha(Color.GRAY, alpha);
 
-            DrawUtil.begin();
             if (!suffix.isEmpty()) {
                 DrawUtil.drawString(" " + suffix, xPosition, yPosition, 12, suffixColor, Alignment.TOP_RIGHT, ResourceManager.FontResources.regular);
                 DrawUtil.drawString(moduleName, xPosition - suffixWidth, yPosition, 12, moduleColor, Alignment.TOP_RIGHT, ResourceManager.FontResources.regular);
             } else {
                 DrawUtil.drawString(moduleName, xPosition, yPosition, 12, moduleColor, Alignment.TOP_RIGHT, ResourceManager.FontResources.regular);
             }
-            DrawUtil.end();
 
             yPosition += heightCurrent;
         }
+
+        if(watermark.getValue()) {
+            Color watermarkColor = primary.getValue();
+
+            double textWidth = DrawUtil.getStringWidth("Byte", 24, ResourceManager.FontResources.regular);
+
+            DrawUtil.drawString("Byte", 2 + textWidth, 6, 24, watermarkColor, Alignment.TOP_RIGHT, ResourceManager.FontResources.regular);
+        }
+
+        DrawUtil.end();
     }
 
     private Color applyAlpha(Color color, float alpha) {

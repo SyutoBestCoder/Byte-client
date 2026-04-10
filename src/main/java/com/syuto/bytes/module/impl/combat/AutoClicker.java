@@ -20,7 +20,7 @@ public class AutoClicker extends Module {
         super("AutoClicker", "Clicks for you", Category.COMBAT);
     }
 
-    public NumberSetting aps = new NumberSetting("cps", this, 10, 1, 1000, 10);
+    public NumberSetting aps = new NumberSetting("CPs", this, 10, 1, 1000, 10);
 
     private double clickAccumulator = 0.0;
 

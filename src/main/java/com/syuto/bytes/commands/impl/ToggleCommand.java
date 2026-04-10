@@ -6,8 +6,8 @@ import com.syuto.bytes.module.ModuleManager;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
 import net.minecraft.ChatFormatting;
 
-public class Toggle extends Command {
-    public Toggle() {
+public class ToggleCommand extends Command {
+    public ToggleCommand() {
         super("toggle", "Toggles a module.", ".toggle <module>", "t");
     }
 

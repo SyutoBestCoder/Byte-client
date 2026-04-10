@@ -1,7 +1,7 @@
 package com.syuto.bytes.commands;
 
-import com.syuto.bytes.commands.impl.Bind;
-import com.syuto.bytes.commands.impl.Toggle;
+import com.syuto.bytes.commands.impl.BindCommand;
+import com.syuto.bytes.commands.impl.ToggleCommand;
 import com.syuto.bytes.eventbus.EventHandler;
 import com.syuto.bytes.eventbus.impl.ChatEvent;
 import com.syuto.bytes.utils.impl.client.ChatUtils;
@@ -19,8 +19,8 @@ public class CommandManager {
     }
 
     private void registerAllCommands() {
-        commands.add(new Bind());
-        commands.add(new Toggle());
+        commands.add(new BindCommand());
+        commands.add(new ToggleCommand());
     }
 
 

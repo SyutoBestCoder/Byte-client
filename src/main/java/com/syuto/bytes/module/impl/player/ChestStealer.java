@@ -44,7 +44,7 @@ public class ChestStealer extends Module {
         }
     }
 
-
+    // bringin gout your inner romania 🇷🇴
     private void steal(int size, AbstractContainerMenu handler) {
         for (int i = 0; i < size; i++) {
             Slot slot = handler.slots.get(i);

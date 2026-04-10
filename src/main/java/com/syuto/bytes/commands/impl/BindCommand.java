@@ -10,8 +10,8 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
 
-public class Bind extends Command {
-    public Bind() {
+public class BindCommand extends Command {
+    public BindCommand() {
         super("Bind", "Binds a module by name.", ".bind <module> <key> | <clear> | <list>", "b");
     }
 

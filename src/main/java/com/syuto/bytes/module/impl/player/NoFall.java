@@ -7,7 +7,8 @@ import com.syuto.bytes.module.api.Category;
 import com.syuto.bytes.setting.impl.ModeSetting;
 import com.syuto.bytes.utils.impl.player.PlayerUtil;
 import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
-@Deprecated
+
+
 public class NoFall extends Module {
 
     public ModeSetting mode = new ModeSetting(
